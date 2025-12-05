@@ -223,7 +223,7 @@ function renderAverages() {
 ================================ */
 
 function renderChart() {
-    const ctx = document.getElementById("bpLineChart");
+    const ctx = document.getElementById("bpLineChart").getContext("2d");
 
     if (bpChartInstance) bpChartInstance.destroy();
 
@@ -232,38 +232,104 @@ function renderChart() {
         return;
     }
 
-    // group by date
-    const g = {};
+    // Group by date
+    const grouped = {};
     filteredBpRecords.forEach(r => {
-        if (!g[r.date]) g[r.date] = [];
-        g[r.date].push(r);
+        if (!grouped[r.date]) grouped[r.date] = [];
+        grouped[r.date].push(r);
     });
 
-    const dates = Object.keys(g).sort();
+    const dates = Object.keys(grouped).sort();
     const labels = dates.map(formatThai);
 
-    function avgValid(arr, key) {
-        const vals = validVals(arr.map(v => v[key]));
-        return vals.length ? (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(0) : null;
-    }
+    const avgValid = (arr, key) => {
+        const vals = arr.map(v => v[key]).filter(v => v !== null);
+        return vals.length ? (vals.reduce((a,b)=>a+b,0) / vals.length) : null;
+    };
 
-    const sys = dates.map(d => avgValid(g[d], "systolic"));
-    const dia = dates.map(d => avgValid(g[d], "diastolic"));
-    const pul = dates.map(d => avgValid(g[d], "pulse"));
+    const sys = dates.map(d => avgValid(grouped[d], "systolic"));
+    const dia = dates.map(d => avgValid(grouped[d], "diastolic"));
+    const pul = dates.map(d => avgValid(grouped[d], "pulse"));
 
+    // Chart.js dataset styling
     bpChartInstance = new Chart(ctx, {
         type: "line",
         data: {
             labels,
             datasets: [
-                { label: "ตัวบน", data: sys, borderColor: "#ef4444" },
-                { label: "ตัวล่าง", data: dia, borderColor: "#3b82f6" },
-                { label: "ชีพจร", data: pul, borderColor: "#10b981" }
+                {
+                    label: "ความดันตัวบน (Systolic)",
+                    data: sys,
+                    borderColor: "#ef4444",
+                    backgroundColor: "rgba(239,68,68,0.15)",
+                    pointBackgroundColor: "#ef4444",
+                    pointBorderColor: "#7f1d1d",
+                    pointRadius: 6,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: true
+                },
+                {
+                    label: "ความดันตัวล่าง (Diastolic)",
+                    data: dia,
+                    borderColor: "#3b82f6",
+                    backgroundColor: "rgba(59,130,246,0.15)",
+                    pointBackgroundColor: "#3b82f6",
+                    pointBorderColor: "#1e3a8a",
+                    pointRadius: 6,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: true
+                },
+                {
+                    label: "ชีพจร (Pulse)",
+                    data: pul,
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16,185,129,0.15)",
+                    pointBackgroundColor: "#10b981",
+                    pointBorderColor: "#064e3b",
+                    pointRadius: 6,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: true
+                }
             ]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: { font: { size: 12 } },
+                    grid: { color: "rgba(0,0,0,0.05)" }
+                },
+                x: {
+                    ticks: { font: { size: 12 } },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: "top",
+                    labels: {
+                        font: { size: 14, weight: "600" },
+                        usePointStyle: true,
+                        pointStyle: "roundedRect"
+                    }
+                },
+                tooltip: {
+                    backgroundColor: "rgba(0,0,0,0.75)",
+                    titleFont: { size: 14 },
+                    bodyFont: { size: 13 },
+                    padding: 12,
+                    displayColors: true
+                }
+            }
+        }
     });
 }
+
 
 /* ================================
    RENDER: TABLE
