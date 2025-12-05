@@ -1,119 +1,99 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>สมุดพิทักษ์ใจ 🐠</title>
 
-    <!-- Load Tailwind CSS -->
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Load Chart.js -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
     <style>
-        :root {
-            font-family: 'Inter', sans-serif;
-        }
+        :root { font-family: "Inter", sans-serif; }
         .bento-card {
-            background-color: #ffffff;
+            background: white;
             border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                        0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
             border: 1px solid #e5e7eb;
-            transition: transform 0.3s ease-in-out;
         }
-        .bento-card:hover {
-            transform: translateY(-2px);
-        }
-        .chart-container { height: 350px; }
         @media print {
             .no-print { display: none !important; }
-            .bento-card { box-shadow: none; border: 1px solid #ccc; }
-            .max-w-6xl { max-width: 100%; }
-            .chart-container { height: 450px; }
-            .record-table thead { display: table-header-group; }
+            .chart-container { height: 450px !important; }
         }
     </style>
 </head>
 
 <body class="bg-gray-50 p-4 sm:p-8">
-
 <div class="max-w-6xl mx-auto">
 
-    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-8 text-center">
-        สมุดพิทักษ์ใจ 🐠
-    </h1>
+    <h1 class="text-3xl font-extrabold text-center mb-6">สมุดพิทักษ์ใจ 🐠</h1>
 
-    <!-- Filter UI -->
-    <div class="bento-card p-6 md:p-8 mb-6 no-print">
-        <h2 class="text-lg font-semibold text-gray-700 mb-4">ตัวกรองข้อมูล</h2>
+    <!-- FILTER -->
+    <div class="bento-card mb-6 no-print">
+        <h2 class="text-lg font-semibold mb-4">ตัวกรองข้อมูล</h2>
 
-        <div class="flex flex-col lg:flex-row lg:items-end gap-4">
-
-            <div class="flex-grow flex flex-col sm:flex-row gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">วันที่เริ่มต้น:</label>
-                    <input type="date" id="startDate"
-                        class="mt-1 block w-full text-sm rounded-md border-gray-300 shadow-sm p-1.5">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">วันที่สิ้นสุด:</label>
-                    <input type="date" id="endDate"
-                        class="mt-1 block w-full text-sm rounded-md border-gray-300 shadow-sm p-1.5">
-                </div>
+        <div class="grid sm:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="text-sm">วันที่เริ่มต้น</label>
+                <input id="startDate" type="date"
+                    class="w-full p-1.5 border rounded-md text-sm" />
             </div>
-
-            <div class="flex flex-wrap gap-2">
-                <button data-filter="this-month" class="quick-filter-btn px-3 py-1.5 text-xs rounded-full border bg-white">
-                    เดือนนี้
-                </button>
-                <button data-filter="last-3-months" class="quick-filter-btn px-3 py-1.5 text-xs rounded-full border bg-white">
-                    3 เดือนที่ผ่านมา
-                </button>
-                <button data-filter="this-year" class="quick-filter-btn px-3 py-1.5 text-xs rounded-full border bg-white">
-                    ปีนี้
-                </button>
-                <button data-filter="all-time"
-                    class="quick-filter-btn px-3 py-1.5 text-xs rounded-full border bg-blue-500 text-white">
-                    ตั้งแต่ต้น
-                </button>
+            <div>
+                <label class="text-sm">วันที่สิ้นสุด</label>
+                <input id="endDate" type="date"
+                    class="w-full p-1.5 border rounded-md text-sm" />
             </div>
         </div>
 
-        <div class="mt-4 flex justify-end">
-            <button id="print-button"
-                class="px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
-                พิมพ์ / ส่งออก PDF
+        <div class="flex flex-wrap gap-2 mb-4">
+            <button data-filter="this-month" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">
+                เดือนนี้
+            </button>
+            <button data-filter="last-3-months" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">
+                3 เดือนที่ผ่านมา
+            </button>
+            <button data-filter="this-year" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">
+                ปีนี้
+            </button>
+            <button data-filter="all-time"
+                class="quick-filter-btn px-3 py-1 text-xs border rounded-full bg-blue-500 text-white">
+                ตั้งแต่ต้น
             </button>
         </div>
+
+        <button id="print-button" class="px-4 py-2 bg-indigo-600 text-white rounded-md">
+            พิมพ์ / ส่งออก PDF
+        </button>
     </div>
 
-    <!-- Averages -->
+    <!-- AVERAGE -->
     <div id="average-bento"
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"></div>
 
-    <!-- Chart -->
-    <div class="bento-card p-6 md:p-8 mb-10">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4">แนวโน้มความดันโลหิตและชีพจร</h2>
-        <div class="chart-container">
+    <!-- CHART -->
+    <div class="bento-card mb-10">
+        <h2 class="text-xl font-semibold mb-4">แนวโน้มความดันโลหิตและชีพจร</h2>
+        <div class="chart-container" style="height:350px">
             <canvas id="bpLineChart"></canvas>
         </div>
     </div>
 
-    <!-- Table -->
-    <div class="bento-card p-4 sm:p-6">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4">บันทึกความดันโลหิตโดยละเอียด</h2>
+    <!-- TABLE -->
+    <div class="bento-card">
+        <h2 class="text-xl font-semibold mb-4">บันทึกความดันโลหิตโดยละเอียด</h2>
+
         <div class="overflow-x-auto">
-            <table class="w-full record-table text-sm">
+            <table class="w-full text-sm record-table">
                 <thead>
                     <tr class="border-b">
-                        <th>วันที่</th>
-                        <th>ช่วงเวลา</th>
-                        <th>ความดันตัวบน</th>
-                        <th>ความดันตัวล่าง</th>
-                        <th>ชีพจร</th>
+                        <th class="text-left py-2">วันที่</th>
+                        <th class="text-left">ช่วงเวลา</th>
+                        <th class="text-left">ความดันตัวบน</th>
+                        <th class="text-left">ความดันตัวล่าง</th>
+                        <th class="text-left">ชีพจร</th>
                     </tr>
                 </thead>
                 <tbody id="bp-table-body"></tbody>
@@ -124,85 +104,234 @@
 </div>
 
 <script>
-
-/* ======================================================
-   1) READ TOKEN + FETCH REAL BP DATA FROM N8N
-====================================================== */
-
-const urlParams = new URLSearchParams(window.location.search);
-const token = urlParams.get("token");
+/* ================================
+   FETCH + GLOBAL STATE
+================================ */
 
 let allBpRecords = [];
 let filteredBpRecords = [];
 let bpChartInstance = null;
 
+const urlParams = new URLSearchParams(window.location.search);
+const token = urlParams.get("token");
+
 async function loadBpData() {
     if (!token) {
-        alert("ไม่พบ token กรุณาเข้าผ่าน LINE อีกครั้ง");
+        alert("ไม่พบ token กรุณาเข้าจาก LINE ใหม่");
         return;
     }
-
     try {
         const res = await fetch(
             `https://n8n.srv1159869.hstgr.cloud/webhook/bp-dashboard?token=${token}`
         );
-
         const data = await res.json();
 
         if (!Array.isArray(data)) {
-            alert("token ไม่ถูกต้อง / หมดอายุ กรุณาเข้าจาก LINE ใหม่");
+            alert("token ไม่ถูกต้อง / หมดอายุ");
             return;
         }
 
-        allBpRecords = data;
+        // 🔥 CONVERT NULL → "-"
+        allBpRecords = data.map(r => ({
+            date: r.date,
+            time: r.period ?? r.time ?? "-",
+            systolic: r.systolic === 0 || r.systolic == null ? null : r.systolic,
+            diastolic: r.diastolic === 0 || r.diastolic == null ? null : r.diastolic,
+            pulse: r.pulse === 0 || r.pulse == null ? null : r.pulse
+        }));
 
-    } catch (err) {
-        console.error(err);
-        alert("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
+    } catch (e) {
+        console.error(e);
+        alert("โหลดข้อมูลไม่สำเร็จ");
     }
 }
 
-/* ======================================================
-   2) BP COLOR & UTILITY FUNCTIONS
-====================================================== */
+/* ================================
+   HELPERS
+================================ */
 
-const BP_COLOR_MAP = {
-    NORMAL:   { tailwind: "text-green-700", point: "rgba(5,150,105,0.1)", border: "#059669" },
-    ELEVATED: { tailwind: "text-yellow-700", point: "#facc15", border: "#facc15" },
-    STAGE_1:  { tailwind: "text-orange-700", point: "#f97316", border: "#f97316" },
-    STAGE_2:  { tailwind: "text-red-600", point: "#ea580c", border: "#ea580c" },
-    CRISIS:   { tailwind: "text-red-800", point: "#dc2626", border: "#dc2626" }
-};
+const TIME_ORDER = { "เช้า": 1, "บ่าย": 2, "เย็น": 3, "ดึก": 4, "-": 99 };
 
-function getBpCategory(sys, dia) {
-    if (sys > 180 || dia > 120) return BP_COLOR_MAP.CRISIS;
-    if (sys >= 140 || dia >= 90) return BP_COLOR_MAP.STAGE_2;
-    if (sys >= 130 || dia >= 80) return BP_COLOR_MAP.STAGE_1;
-    if (sys >= 120 && dia < 80) return BP_COLOR_MAP.ELEVATED;
-    return BP_COLOR_MAP.NORMAL;
-}
-
-function getPulseColorClass(pulse) {
-    return pulse < 40 || pulse > 100 ? "text-red-700 font-bold" : "text-green-700";
-}
-
-function formatDateThai(dateStr) {
-    return new Date(dateStr).toLocaleDateString("th-TH", {
+function formatThai(d) {
+    return new Date(d).toLocaleDateString("th-TH", {
         year: "numeric", month: "short", day: "numeric"
     });
 }
 
-function toDateString(date) {
-    return date.toISOString().split("T")[0];
+// filter valid numeric values only
+function validVals(arr) {
+    return arr.filter(v => v !== null && v !== 0);
 }
 
-/* ======================================================
-   3) RENDER FUNCTIONS
-====================================================== */
+/* ================================
+   RENDER: AVERAGE CARD
+================================ */
 
-function updateDashboard(startDateStr, endDateStr) {
-    const start = startDateStr ? new Date(startDateStr) : new Date("2000-01-01");
-    const end = endDateStr ? new Date(endDateStr + "T23:59") : new Date();
+function renderAverages() {
+    const C = document.getElementById("average-bento");
+
+    if (!filteredBpRecords.length) {
+        C.innerHTML = `<div class="col-span-full text-center text-gray-500 py-6">ไม่พบข้อมูล</div>`;
+        return;
+    }
+
+    const sysArr = validVals(filteredBpRecords.map(r => r.systolic));
+    const diaArr = validVals(filteredBpRecords.map(r => r.diastolic));
+    const pulArr = validVals(filteredBpRecords.map(r => r.pulse));
+
+    const avg = arr => (arr.reduce((a,b)=>a+b,0) / arr.length).toFixed(0);
+
+    const cards = [
+        {
+            title: "ความดันตัวบน (Systolic)",
+            value: avg(sysArr),
+            unit: "มม.ปรอท",
+            range: `${Math.min(...sysArr)} - ${Math.max(...sysArr)}`
+        },
+        {
+            title: "ความดันตัวล่าง (Diastolic)",
+            value: avg(diaArr),
+            unit: "มม.ปรอท",
+            range: `${Math.min(...diaArr)} - ${Math.max(...diaArr)}`
+        },
+        {
+            title: "ชีพจร (Pulse)",
+            value: avg(pulArr),
+            unit: "ครั้ง/นาที",
+            range: `${Math.min(...pulArr)} - ${Math.max(...pulArr)}`
+        },
+        { 
+            title: "จำนวนครั้งที่วัด",
+            value: filteredBpRecords.length,
+            unit: "รายการ",
+            range: ""
+        }
+    ];
+
+    C.innerHTML = cards.map(card => `
+        <div class="bento-card">
+            <p class="text-sm text-gray-500">${card.title}</p>
+            <p class="text-3xl font-bold text-black">${card.value}</p>
+            <p class="text-xs text-gray-500">${card.unit}</p>
+            <p class="text-xs text-gray-400 mt-1">${card.range}</p>
+        </div>
+    `).join("");
+}
+
+/* ================================
+   RENDER: CHART
+================================ */
+
+function renderChart() {
+    const ctx = document.getElementById("bpLineChart");
+
+    if (bpChartInstance) bpChartInstance.destroy();
+
+    if (!filteredBpRecords.length) {
+        bpChartInstance = new Chart(ctx, { type: "line", data: {} });
+        return;
+    }
+
+    // group by date
+    const g = {};
+    filteredBpRecords.forEach(r => {
+        if (!g[r.date]) g[r.date] = [];
+        g[r.date].push(r);
+    });
+
+    const dates = Object.keys(g).sort();
+    const labels = dates.map(formatThai);
+
+    function avgValid(arr, key) {
+        const vals = validVals(arr.map(v => v[key]));
+        return vals.length ? (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(0) : null;
+    }
+
+    const sys = dates.map(d => avgValid(g[d], "systolic"));
+    const dia = dates.map(d => avgValid(g[d], "diastolic"));
+    const pul = dates.map(d => avgValid(g[d], "pulse"));
+
+    bpChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                { label: "ตัวบน", data: sys, borderColor: "#ef4444" },
+                { label: "ตัวล่าง", data: dia, borderColor: "#3b82f6" },
+                { label: "ชีพจร", data: pul, borderColor: "#10b981" }
+            ]
+        },
+        options: { responsive: true }
+    });
+}
+
+/* ================================
+   RENDER: TABLE
+================================ */
+
+function renderTable() {
+    const TB = document.getElementById("bp-table-body");
+
+    if (!filteredBpRecords.length) {
+        TB.innerHTML = `<tr><td colspan="5" class="text-center py-6">ไม่พบข้อมูล</td></tr>`;
+        return;
+    }
+
+    const sorted = [...filteredBpRecords].sort((a,b)=>{
+        const d1 = new Date(a.date), d2 = new Date(b.date);
+        if (d1 - d2 !== 0) return d1 - d2;
+        return TIME_ORDER[a.time] - TIME_ORDER[b.time];
+    });
+
+    TB.innerHTML = sorted.map(r => `
+        <tr class="border-b hover:bg-gray-100">
+            <td>${formatThai(r.date)}</td>
+            <td>${r.time}</td>
+            <td>${r.systolic ?? "-"}</td>
+            <td>${r.diastolic ?? "-"}</td>
+            <td>${r.pulse ?? "-"}</td>
+        </tr>
+    `).join("");
+}
+
+/* ================================
+   FILTER + INIT
+================================ */
+
+function setupFilters() {
+    const s = document.getElementById("startDate");
+    const e = document.getElementById("endDate");
+
+    document.getElementById("print-button").onclick = () => window.print();
+
+    const btns = document.querySelectorAll(".quick-filter-btn");
+
+    function apply(f) {
+        const now = new Date();
+        let start;
+
+        if (f === "this-month") start = new Date(now.getFullYear(), now.getMonth(), 1);
+        else if (f === "last-3-months") start = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
+        else if (f === "this-year") start = new Date(now.getFullYear(), 0, 1);
+        else start = new Date("2000-01-01");
+
+        s.value = f === "all-time" ? "" : start.toISOString().split("T")[0];
+        e.value = now.toISOString().split("T")[0];
+
+        updateDashboard();
+    }
+
+    btns.forEach(b => b.onclick = () => apply(b.dataset.filter));
+
+    updateDashboard();
+}
+
+function updateDashboard() {
+    const s = document.getElementById("startDate").value;
+    const e = document.getElementById("endDate").value;
+
+    const start = s ? new Date(s) : new Date("2000-01-01");
+    const end = e ? new Date(e + "T23:59") : new Date();
 
     filteredBpRecords = allBpRecords.filter(r => {
         const d = new Date(r.date);
@@ -214,149 +343,12 @@ function updateDashboard(startDateStr, endDateStr) {
     renderTable();
 }
 
-function renderAverages() {
-    const container = document.getElementById("average-bento");
-
-    if (filteredBpRecords.length === 0) {
-        container.innerHTML =
-            `<div class="col-span-full p-8 text-center text-gray-500">ไม่พบข้อมูล</div>`;
-        return;
-    }
-
-    const calc = (arr, key) => ({
-        avg: (arr.reduce((a, b) => a + b[key], 0) / arr.length).toFixed(0),
-        min: Math.min(...arr.map(a => a[key])),
-        max: Math.max(...arr.map(a => a[key]))
-    });
-
-    const sys = calc(filteredBpRecords, "systolic");
-    const dia = calc(filteredBpRecords, "diastolic");
-    const pulse = calc(filteredBpRecords, "pulse");
-
-    const items = [
-        { title: "ตัวบน", value: sys.avg, unit: "มม.ปรอท", range: `${sys.min}-${sys.max}`, color: "text-red-600", bg: "bg-red-50" },
-        { title: "ตัวล่าง", value: dia.avg, unit: "มม.ปรอท", range: `${dia.min}-${dia.max}`, color: "text-blue-600", bg: "bg-blue-50" },
-        { title: "ชีพจร", value: pulse.avg, unit: "ครั้ง/นาที", range: `${pulse.min}-${pulse.max}`, color: "text-green-600", bg: "bg-green-50" },
-        { title: "จำนวนครั้ง", value: filteredBpRecords.length, unit: "รายการ", range: "", color: "text-yellow-600", bg: "bg-yellow-50" }
-    ];
-
-    container.innerHTML = items.map(card => `
-        <div class="bento-card p-6 ${card.bg}">
-            <p class="text-sm text-gray-500">${card.title}</p>
-            <p class="text-3xl font-bold ${card.color}">${card.value}</p>
-            <p class="text-xs text-gray-500">${card.unit}</p>
-            <p class="text-xs text-gray-600 mt-2">${card.range}</p>
-        </div>
-    `).join("");
-}
-
-function renderChart() {
-    const ctx = document.getElementById("bpLineChart").getContext("2d");
-
-    if (bpChartInstance) bpChartInstance.destroy();
-
-    if (filteredBpRecords.length === 0) {
-        bpChartInstance = new Chart(ctx, {
-            type: "line",
-            data: { labels: [], datasets: [] }
-        });
-        return;
-    }
-
-    const grouped = {};
-    filteredBpRecords.forEach(r => {
-        if (!grouped[r.date]) grouped[r.date] = [];
-        grouped[r.date].push(r);
-    });
-
-    const labels = Object.keys(grouped).map(formatDateThai);
-
-    function avg(key, arr) {
-        return (arr.reduce((a, b) => a + b[key], 0) / arr.length).toFixed(0);
-    }
-
-    const sysData = Object.values(grouped).map(a => avg("systolic", a));
-    const diaData = Object.values(grouped).map(a => avg("diastolic", a));
-    const pulseData = Object.values(grouped).map(a => avg("pulse", a));
-
-    bpChartInstance = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels,
-            datasets: [
-                { label: "ตัวบน", data: sysData, borderColor: "#ef4444" },
-                { label: "ตัวล่าง", data: diaData, borderColor: "#3b82f6" },
-                { label: "ชีพจร", data: pulseData, borderColor: "#10b981" }
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-}
-
-function renderTable() {
-    const tbody = document.getElementById("bp-table-body");
-
-    if (filteredBpRecords.length === 0) {
-        tbody.innerHTML =
-            `<tr><td colspan="5" class="text-center py-6 text-gray-500">ไม่พบข้อมูล</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = filteredBpRecords.map(r => {
-        const col = getBpCategory(r.systolic, r.diastolic).tailwind;
-
-        return `
-            <tr class="hover:bg-gray-100">
-                <td>${formatDateThai(r.date)}</td>
-                <td>${r.period ?? r.time ?? "-"}</td>
-                <td class="${col} font-bold">${r.systolic}</td>
-                <td class="${col} font-bold">${r.diastolic}</td>
-                <td class="${getPulseColorClass(r.pulse)}">${r.pulse}</td>
-            </tr>
-        `;
-    }).join("");
-}
-
-/* ======================================================
-   4) FILTER AND INIT
-====================================================== */
-
-function setupFilters() {
-    const startInput = document.getElementById("startDate");
-    const endInput = document.getElementById("endDate");
-
-    const buttons = document.querySelectorAll(".quick-filter-btn");
-
-    function apply(type) {
-        const now = new Date();
-        let start;
-
-        if (type === "this-month") start = new Date(now.getFullYear(), now.getMonth(), 1);
-        else if (type === "last-3-months") start = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-        else if (type === "this-year") start = new Date(now.getFullYear(), 0, 1);
-        else start = new Date("2000-01-01");
-
-        startInput.value = type === "all-time" ? "" : toDateString(start);
-        endInput.value = toDateString(now);
-
-        updateDashboard(startInput.value, endInput.value);
-    }
-
-    buttons.forEach(btn => {
-        btn.onclick = () => apply(btn.dataset.filter);
-    });
-
-    document.getElementById("print-button").onclick = () => window.print();
-
-    apply("all-time");
-}
-
 window.onload = async () => {
-    await loadBpData();   // Load real DB data
-    setupFilters();       // Render dashboard
+    await loadBpData();
+    setupFilters();
 };
-
 </script>
 
 </body>
 </html>
+
