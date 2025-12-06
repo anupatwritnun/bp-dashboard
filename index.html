@@ -3,391 +3,635 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>สมุดพิทักษ์ใจ 🐠</title>
+    <title>สมุดพิทักษ์ใจ 🐠 | Goldfish Dashboard</title>
 
-    <!-- Tailwind -->
+    <!-- Google Fonts: Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
-    <!-- LIFF SDK (correct version) -->
+    <!-- LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 
-    <style>
-        :root { font-family: "Inter", sans-serif; }
-        .bento-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            border: 1px solid #e5e7eb;
+    <!-- Tailwind Config: Goldfish Theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',  // พื้นหลังส้มอ่อนมาก
+                            100: '#ffedd5',
+                            500: '#f97316', // สีส้มหลัก (Goldfish)
+                            600: '#ea580c',
+                        },
+                        // Custom Data Colors
+                        sys: {
+                            light: '#fce7f3', // Pink 100
+                            main: '#ec4899',  // Pink 500
+                            dark: '#be185d',  // Pink 700
+                        },
+                        dia: {
+                            light: '#e0f2fe', // Sky 100
+                            main: '#0ea5e9',  // Sky 500
+                            dark: '#0369a1',  // Sky 700
+                        },
+                        pulse: {
+                            light: '#fef3c7', // Amber 100
+                            main: '#92400e',  // Amber 800 (Brownish)
+                            dark: '#78350f',  // Amber 900
+                        }
+                    }
+                }
+            }
         }
+    </script>
+
+    <style>
+        body {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#e7e5e4 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #fff7ed; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #fdba74; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #fb923c; }
+        
+        .loader {
+            border: 3px solid #fff7ed;
+            border-top: 3px solid #f97316;
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         @media print {
             .no-print { display: none !important; }
-            .chart-container { height: 450px !important; }
+            body { background: white; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
 </head>
 
-<body class="bg-gray-50 p-4 sm:p-8">
-<div class="max-w-6xl mx-auto">
+<body class="text-slate-700 antialiased min-h-screen flex flex-col">
 
-    <h1 class="text-3xl font-extrabold text-center mb-6">สมุดพิทักษ์ใจ 🐠</h1>
-
-    <!-- FILTER PANEL -->
-    <div class="bento-card mb-6 no-print">
-        <h2 class="text-lg font-semibold mb-4">ตัวกรองข้อมูล</h2>
-
-        <div class="grid sm:grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="text-sm">วันที่เริ่มต้น</label>
-                <input id="startDate" type="date"
-                    class="w-full p-1.5 border rounded-md text-sm" />
+    <!-- Navbar -->
+    <nav class="bg-white/90 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-brand-50 text-brand-500 p-2 rounded-xl shadow-sm border border-brand-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-fish"><path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z"/><path d="M18 12v.5"/><path d="M16 17.93a9.77 9.77 0 0 1 0-11.86"/><path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33"/><path d="M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4"/><path d="m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98"/></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-800 tracking-tight">สมุดพิทักษ์ใจ <span class="text-brand-500">🐠</span></h1>
+                    </div>
+                </div>
+                <button id="print-button" class="no-print hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-sm text-slate-600 hover:text-brand-600 hover:border-brand-200 hover:bg-brand-50 transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    พิมพ์รายงาน
+                </button>
             </div>
-            <div>
-                <label class="text-sm">วันที่สิ้นสุด</label>
-                <input id="endDate" type="date"
-                    class="w-full p-1.5 border rounded-md text-sm" />
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Loading -->
+        <div id="loading-screen" class="fixed inset-0 bg-white/95 z-[60] flex flex-col items-center justify-center transition-opacity duration-500">
+            <div class="loader mb-4"></div>
+            <p class="text-brand-600 text-sm font-medium animate-pulse">กำลังเชื่อมต่อ LINE...</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 mb-8 no-print">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+                    <span class="w-1.5 h-6 bg-brand-500 rounded-full"></span>
+                    ช่วงเวลาที่ต้องการดู
+                </h2>
+                <div class="flex flex-wrap gap-2 justify-center">
+                    <button data-filter="this-month" class="quick-filter-btn px-5 py-2 text-xs font-semibold rounded-full border border-slate-200 text-slate-500 hover:border-brand-300 hover:text-brand-600 transition-all">เดือนนี้</button>
+                    <button data-filter="last-3-months" class="quick-filter-btn px-5 py-2 text-xs font-semibold rounded-full border border-slate-200 text-slate-500 hover:border-brand-300 hover:text-brand-600 transition-all">3 เดือน</button>
+                    <button data-filter="this-year" class="quick-filter-btn px-5 py-2 text-xs font-semibold rounded-full border border-slate-200 text-slate-500 hover:border-brand-300 hover:text-brand-600 transition-all">ปีนี้</button>
+                    <button data-filter="all-time" class="quick-filter-btn px-5 py-2 text-xs font-semibold rounded-full bg-brand-500 text-white shadow-md shadow-brand-500/20 border-transparent hover:bg-brand-600">ทั้งหมด</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="relative group">
+                    <label class="absolute -top-2.5 left-4 bg-white px-2 text-[10px] text-brand-500 font-bold uppercase tracking-wider">เริ่มต้น</label>
+                    <input id="startDate" type="date" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all group-hover:bg-white" />
+                </div>
+                <div class="relative group">
+                    <label class="absolute -top-2.5 left-4 bg-white px-2 text-[10px] text-brand-500 font-bold uppercase tracking-wider">สิ้นสุด</label>
+                    <input id="endDate" type="date" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all group-hover:bg-white" />
+                </div>
             </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 mb-4">
-            <button data-filter="this-month" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">เดือนนี้</button>
-            <button data-filter="last-3-months" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">3 เดือนที่ผ่านมา</button>
-            <button data-filter="this-year" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">ปีนี้</button>
-            <button data-filter="all-time" class="quick-filter-btn px-3 py-1 text-xs border rounded-full bg-blue-500 text-white">ตั้งแต่ต้น</button>
+        <!-- Stats Bento -->
+        <div id="average-bento" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <!-- JS Injected Here -->
         </div>
 
-        <button id="print-button" class="px-4 py-2 bg-indigo-600 text-white rounded-md">
-            พิมพ์ / ส่งออก PDF
-        </button>
-    </div>
-
-    <!-- AVERAGE CARDS -->
-    <div id="average-bento" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"></div>
-
-    <!-- CHART -->
-    <div class="bento-card mb-10">
-        <h2 class="text-xl font-semibold mb-4">แนวโน้มความดันโลหิตและชีพจร</h2>
-        <div class="chart-container" style="height:350px">
-            <canvas id="bpLineChart"></canvas>
+        <!-- Chart Section -->
+        <div class="bg-white rounded-[2rem] shadow-lg shadow-brand-500/5 border border-slate-100 p-8 mb-10 relative overflow-hidden">
+            <div class="absolute -top-20 -right-20 w-64 h-64 bg-brand-50 rounded-full opacity-50 blur-3xl pointer-events-none"></div>
+            
+            <div class="flex items-center justify-between mb-6 relative z-10">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">แนวโน้มสุขภาพ</h2>
+                    <div class="flex flex-wrap gap-4 mt-2 text-sm">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sys-main"></span> ความดันตัวบน (สีชมพู)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-dia-main"></span> ความดันตัวล่าง (สีฟ้า)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-pulse-main"></span> ชีพจร (สีน้ำตาล)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="relative w-full h-[380px] z-10">
+                <canvas id="bpLineChart"></canvas>
+            </div>
         </div>
-    </div>
 
-    <!-- TABLE -->
-    <div class="bento-card">
-        <h2 class="text-xl font-semibold mb-4">บันทึกความดันโลหิตโดยละเอียด</h2>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm record-table">
-                <thead>
-                    <tr class="border-b">
-                        <th class="text-left py-2">วันที่</th>
-                        <th class="text-left">ช่วงเวลา</th>
-                        <th class="text-left">ความดันตัวบน</th>
-                        <th class="text-left">ความดันตัวล่าง</th>
-                        <th class="text-left">ชีพจร</th>
-                    </tr>
-                </thead>
-                <tbody id="bp-table-body"></tbody>
-            </table>
+        <!-- Table Section -->
+        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                    ประวัติการบันทึก
+                </h2>
+                <span id="record-count-badge" class="text-xs font-bold px-3 py-1.5 bg-brand-50 text-brand-600 rounded-lg border border-brand-100">0 รายการ</span>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-slate-400 font-semibold uppercase bg-slate-50/50 sticky top-0">
+                        <tr>
+                            <th class="px-6 py-4">วันที่</th>
+                            <th class="px-6 py-4">ช่วงเวลา</th>
+                            <th class="px-6 py-4 text-center text-sys-main">ตัวบน (SYS)</th>
+                            <th class="px-6 py-4 text-center text-dia-main">ตัวล่าง (DIA)</th>
+                            <th class="px-6 py-4 text-center text-pulse-main">ชีพจร</th>
+                            <th class="px-6 py-4 text-center">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bp-table-body" class="divide-y divide-slate-50">
+                        <!-- JS Injected -->
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
 
-</div>
+    </main>
 
-<script>
-/* ================================
-   GLOBAL STATE
-================================ */
-let allBpRecords = [];
-let filteredBpRecords = [];
-let bpChartInstance = null;
+    <footer class="mt-auto py-8 text-center text-slate-400 text-xs no-print">
+        <p class="flex items-center justify-center gap-2">
+            <span>© 2024 สมุดพิทักษ์ใจ</span>
+            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span>เพื่อสุขภาพที่ดีของคุณ</span>
+        </p>
+    </footer>
 
-/* ================================
-   LIFF INITIALIZATION
-================================ */
-async function initLIFF() {
-    try {
-        await liff.init({ liffId: "2008641952-nWd4qpk6" });
+    <script>
+        /* ================================
+           STATE & CONFIG
+        ================================ */
+        let allBpRecords = [];
+        let filteredBpRecords = [];
+        let bpChartInstance = null;
+        
+        // Colors from Tailwind Config
+        const COLORS = {
+            sys: '#ec4899', // Pink
+            dia: '#0ea5e9', // Blue
+            pulse: '#92400e' // Brown
+        };
 
-        if (!liff.isLoggedIn()) {
-            liff.login();
-            return;
-        }
+        /* ================================
+           LIFF & FETCH LOGIC
+        ================================ */
+        async function initLIFF() {
+            try {
+                // Initialize LIFF with your ID
+                await liff.init({ liffId: "2008641952-nWd4qpk6" });
 
-        const profile = await liff.getProfile();
-        const userId = profile.userId;
-
-        console.log("LINE UserID:", userId);
-
-        await loadBpData(userId);
-        setupFilters();
-
-    } catch (err) {
-        console.error("LIFF error:", err);
-        alert("เกิดข้อผิดพลาดในการโหลด LIFF");
-    }
-}
-
-/* ================================
-   LOAD BP DATA FROM N8N
-================================ */
-async function loadBpData(userId) {
-    try {
-        const res = await fetch(
-            "https://n8n.srv1159869.hstgr.cloud/webhook/bp-dashboard",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId })
-            }
-        );
-
-        const data = await res.json();
-
-        allBpRecords = data.map(r => ({
-            date: r.date,
-            time: r.period ?? r.time ?? "-",
-            systolic: r.systolic ? r.systolic : null,
-            diastolic: r.diastolic ? r.diastolic : null,
-            pulse: r.pulse ? r.pulse : null
-        }));
-
-    } catch (err) {
-        console.error("Fetch error:", err);
-        alert("โหลดข้อมูลจาก server ไม่สำเร็จ");
-    }
-}
-
-/* ================================
-   HELPERS
-================================ */
-const TIME_ORDER = { "เช้า": 1, "บ่าย": 2, "เย็น": 3, "ดึก": 4, "-": 99 };
-
-function formatThai(d) {
-    return new Date(d).toLocaleDateString("th-TH", {
-        year: "numeric", month: "short", day: "numeric"
-    });
-}
-
-const validVals = arr => arr.filter(v => v !== null);
-
-/* ================================
-   RENDER AVERAGES
-================================ */
-function renderAverages() {
-    const C = document.getElementById("average-bento");
-
-    if (!filteredBpRecords.length) {
-        C.innerHTML = `<div class="col-span-full text-center text-gray-500 py-6">ไม่พบข้อมูล</div>`;
-        return;
-    }
-
-    const sysArr = validVals(filteredBpRecords.map(r => r.systolic));
-    const diaArr = validVals(filteredBpRecords.map(r => r.diastolic));
-    const pulArr = validVals(filteredBpRecords.map(r => r.pulse));
-
-    const avg = arr => (arr.reduce((a,b)=>a+b,0) / arr.length).toFixed(0);
-
-    const cards = [
-        {
-            title: "ความดันตัวบน (Systolic)",
-            value: avg(sysArr),
-            unit: "มม.ปรอท",
-            range: `${Math.min(...sysArr)} - ${Math.max(...sysArr)}`
-        },
-        {
-            title: "ความดันตัวล่าง (Diastolic)",
-            value: avg(diaArr),
-            unit: "มม.ปรอท",
-            range: `${Math.min(...diaArr)} - ${Math.max(...diaArr)}`
-        },
-        {
-            title: "ชีพจร (Pulse)",
-            value: avg(pulArr),
-            unit: "ครั้ง/นาที",
-            range: `${Math.min(...pulArr)} - ${Math.max(...pulArr)}`
-        },
-        { 
-            title: "จำนวนครั้งที่วัด",
-            value: filteredBpRecords.length,
-            unit: "รายการ",
-            range: ""
-        }
-    ];
-
-    C.innerHTML = cards.map(card => `
-        <div class="bento-card">
-            <p class="text-sm text-gray-500">${card.title}</p>
-            <p class="text-3xl font-bold">${card.value}</p>
-            <p class="text-xs text-gray-500">${card.unit}</p>
-            <p class="text-xs text-gray-400 mt-1">${card.range}</p>
-        </div>
-    `).join("");
-}
-
-/* ================================
-   RENDER CHART
-================================ */
-function renderChart() {
-    const ctx = document.getElementById("bpLineChart").getContext("2d");
-
-    if (bpChartInstance) bpChartInstance.destroy();
-
-    if (!filteredBpRecords.length) {
-        bpChartInstance = new Chart(ctx, { type: "line", data: {} });
-        return;
-    }
-
-    const grouped = {};
-    filteredBpRecords.forEach(r => {
-        if (!grouped[r.date]) grouped[r.date] = [];
-        grouped[r.date].push(r);
-    });
-
-    const dates = Object.keys(grouped).sort();
-    const labels = dates.map(formatThai);
-
-    const avgValid = (arr, key) => {
-        const vals = arr.map(v => v[key]).filter(v => v !== null);
-        return vals.length ? (vals.reduce((a,b)=>a+b,0) / vals.length) : null;
-    };
-
-    const sys = dates.map(d => avgValid(grouped[d], "systolic"));
-    const dia = dates.map(d => avgValid(grouped[d], "diastolic"));
-    const pul = dates.map(d => avgValid(grouped[d], "pulse"));
-
-    bpChartInstance = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: "ตัวบน (SYS)",
-                    data: sys,
-                    borderColor: "#ef4444",
-                    backgroundColor: "rgba(239,68,68,0.12)",
-                    pointBackgroundColor: "#ef4444",
-                    borderWidth: 3,
-                    pointRadius: 6,
-                    tension: 0.35,
-                    fill: true
-                },
-                {
-                    label: "ตัวล่าง (DIA)",
-                    data: dia,
-                    borderColor: "#3b82f6",
-                    backgroundColor: "rgba(59,130,246,0.12)",
-                    pointBackgroundColor: "#3b82f6",
-                    borderWidth: 3,
-                    pointRadius: 6,
-                    tension: 0.35,
-                    fill: true
-                },
-                {
-                    label: "ชีพจร (Pulse)",
-                    data: pul,
-                    borderColor: "#10b981",
-                    backgroundColor: "rgba(16,185,129,0.12)",
-                    pointBackgroundColor: "#10b981",
-                    borderWidth: 3,
-                    pointRadius: 6,
-                    tension: 0.35,
-                    fill: true
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
                 }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
+
+                const profile = await liff.getProfile();
+                const userId = profile.userId;
+                console.log("LINE UserID:", userId);
+
+                // Update loader text
+                document.querySelector('#loading-screen p').innerText = 'กำลังโหลดข้อมูลสุขภาพ...';
+
+                await loadBpData(userId);
+                setupFilters();
+
+            } catch (err) {
+                console.error("LIFF error:", err);
+                alert("เกิดข้อผิดพลาดในการโหลด LIFF");
+                document.getElementById("loading-screen").style.display = 'none';
+            }
         }
-    });
-}
 
-/* ================================
-   RENDER TABLE
-================================ */
-function renderTable() {
-    const TB = document.getElementById("bp-table-body");
+        async function loadBpData(userId) {
+            try {
+                const res = await fetch(
+                    "https://n8n.srv1159869.hstgr.cloud/webhook/bp-dashboard",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId })
+                    }
+                );
 
-    if (!filteredBpRecords.length) {
-        TB.innerHTML = `<tr><td colspan="5" class="text-center py-6">ไม่พบข้อมูล</td></tr>`;
-        return;
-    }
+                const data = await res.json();
 
-    const sorted = [...filteredBpRecords].sort((a,b)=>{
-        const d1 = new Date(a.date), d2 = new Date(b.date);
-        if (d1 - d2 !== 0) return d1 - d2;
-        return TIME_ORDER[a.time] - TIME_ORDER[b.time];
-    });
+                // Map data with number parsing for stats logic
+                allBpRecords = data.map(r => ({
+                    date: r.date,
+                    time: r.period ?? r.time ?? "-",
+                    systolic: r.systolic ? Number(r.systolic) : null,
+                    diastolic: r.diastolic ? Number(r.diastolic) : null,
+                    pulse: r.pulse ? Number(r.pulse) : null
+                }));
 
-    TB.innerHTML = sorted.map(r => `
-        <tr class="border-b hover:bg-gray-100">
-            <td>${formatThai(r.date)}</td>
-            <td>${r.time}</td>
-            <td>${r.systolic ?? "-"}</td>
-            <td>${r.diastolic ?? "-"}</td>
-            <td>${r.pulse ?? "-"}</td>
-        </tr>
-    `).join("");
-}
+            } catch (err) {
+                console.error("Fetch error:", err);
+                alert("โหลดข้อมูลจาก server ไม่สำเร็จ");
+            } finally {
+                // Hide Loader
+                const loader = document.getElementById("loading-screen");
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }
+        }
 
-/* ================================
-   FILTER + INIT
-================================ */
-function setupFilters() {
-    const s = document.getElementById("startDate");
-    const e = document.getElementById("endDate");
+        /* ================================
+           LOGIC: STATUS EVALUATION
+        ================================ */
+        function getStatus(sys, dia) {
+            if (!sys || !dia) return { text: '-', color: 'bg-slate-100 text-slate-400' };
+            if (sys >= 180 || dia >= 110) return { text: 'อันตราย', color: 'bg-red-50 text-red-600 ring-1 ring-red-200 font-bold' };
+            if (sys >= 160 || dia >= 100) return { text: 'สูงมาก', color: 'bg-orange-50 text-orange-600 ring-1 ring-orange-200 font-semibold' };
+            if (sys >= 140 || dia >= 90) return { text: 'สูง', color: 'bg-amber-50 text-amber-600 ring-1 ring-amber-200' };
+            if (sys >= 130 || dia >= 80) return { text: 'เริ่มสูง', color: 'bg-yellow-50 text-yellow-600 ring-1 ring-yellow-200' };
+            return { text: 'ปกติ', color: 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200' };
+        }
 
-    document.getElementById("print-button").onclick = () => window.print();
+        /* ================================
+           CALCULATION HELPER
+        ================================ */
+        function calculateStats(records, key) {
+            const validValues = records
+                .map(r => Number(r[key]))
+                .filter(v => v !== null && v !== undefined && v > 0 && !isNaN(v));
 
-    const btns = document.querySelectorAll(".quick-filter-btn");
+            if (validValues.length === 0) return { avg: '-', min: '-', max: '-', count: 0 };
+            const sum = validValues.reduce((a, b) => a + b, 0);
+            return { 
+                avg: (sum / validValues.length).toFixed(0), 
+                min: Math.min(...validValues), 
+                max: Math.max(...validValues), 
+                count: validValues.length 
+            };
+        }
 
-    function apply(f) {
-        const now = new Date();
-        let start;
+        /* ================================
+           HELPER: ARROW INDICATOR
+        ================================ */
+        function getArrowIndicator(value, type) {
+            const val = Number(value);
+            if (isNaN(val)) return '';
 
-        if (f === "this-month") start = new Date(now.getFullYear(), now.getMonth(), 1);
-        else if (f === "last-3-months") start = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
-        else if (f === "this-year") start = new Date(now.getFullYear(), 0, 1);
-        else start = new Date("2000-01-01");
+            // Stage 2 (Red Double Arrow)
+            if ((type === 'sys' && val >= 160) || (type === 'dia' && val >= 100)) {
+                return '<span class="text-red-500 text-lg font-bold ml-1.5 animate-pulse">↑↑</span>';
+            }
+            // Stage 1 (Red Single Arrow)
+            if ((type === 'sys' && val >= 140) || (type === 'dia' && val >= 90)) {
+                return '<span class="text-red-500 text-lg font-bold ml-1.5">↑</span>';
+            }
+            return '';
+        }
 
-        s.value = f === "all-time" ? "" : start.toISOString().split("T")[0];
-        e.value = now.toISOString().split("T")[0];
+        /* ================================
+           RENDER: STATS CARD
+        ================================ */
+        function renderAverages() {
+            const C = document.getElementById("average-bento");
+            
+            if (!filteredBpRecords.length) {
+                C.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-12 text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                    <p>ไม่พบข้อมูลในช่วงเวลานี้</p>
+                </div>`;
+                return;
+            }
 
-        updateDashboard();
-    }
+            const morningRecs = filteredBpRecords.filter(r => r.time && r.time.includes('เช้า'));
+            const eveningRecs = filteredBpRecords.filter(r => r.time && r.time.includes('เย็น'));
 
-    btns.forEach(b => b.onclick = () => apply(b.dataset.filter));
+            // Card Template with Arrows
+            const createCard = (title, mainStats, mornStats, eveStats, theme, type) => {
+                const arrowMain = getArrowIndicator(mainStats.avg, type);
+                const arrowMorn = getArrowIndicator(mornStats.avg, type);
+                const arrowEve = getArrowIndicator(eveStats.avg, type);
 
-    updateDashboard();
-}
+                return `
+                <div class="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col relative overflow-hidden group">
+                    <!-- Accent Top Bar -->
+                    <div class="h-1.5 w-full ${theme.bgMain}"></div>
+                    
+                    <!-- Header -->
+                    <div class="p-6 pb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-slate-700 text-lg">${title}</h3>
+                            <span class="text-[10px] font-bold tracking-wider text-slate-400 bg-slate-100 px-2 py-1 rounded-md">ทั้งหมด ${mainStats.count} ครั้ง</span>
+                        </div>
+                        <div class="flex items-baseline mt-2">
+                            <span class="text-5xl font-bold ${theme.text} tracking-tight">${mainStats.avg}</span>
+                            ${arrowMain}
+                            <span class="text-sm font-medium text-slate-400 ml-2">เฉลี่ย</span>
+                        </div>
+                        <div class="mt-2 inline-flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded-md">
+                             <span>ต่ำสุด ${mainStats.min}</span>
+                             <span class="text-slate-300">•</span>
+                             <span>สูงสุด ${mainStats.max}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="relative h-px bg-slate-100 w-full"></div>
 
-function updateDashboard() {
-    const s = document.getElementById("startDate").value;
-    const e = document.getElementById("endDate").value;
+                    <!-- Breakdown: Morning (Sunrise) & Evening (Moon) -->
+                    <div class="grid grid-cols-2 divide-x divide-slate-100 bg-white flex-grow">
+                        <div class="p-4 text-center group-hover:bg-slate-50/50 transition-colors">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase mb-1 flex justify-center items-center gap-1">
+                                🌞 ช่วงเช้า <span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full ml-1 min-w-[20px]">${mornStats.count}</span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <span class="text-xl font-bold text-slate-700">${mornStats.avg}</span>
+                                ${arrowMorn}
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">${mornStats.min}-${mornStats.max}</div>
+                        </div>
+                        <div class="p-4 text-center group-hover:bg-slate-50/50 transition-colors">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase mb-1 flex justify-center items-center gap-1">
+                                🌙 ช่วงเย็น <span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full ml-1 min-w-[20px]">${eveStats.count}</span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <span class="text-xl font-bold text-slate-700">${eveStats.avg}</span>
+                                ${arrowEve}
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">${eveStats.min}-${eveStats.max}</div>
+                        </div>
+                    </div>
+                </div>
+            `};
 
-    const start = s ? new Date(s) : new Date("2000-01-01");
-    const end = e ? new Date(e + "T23:59") : new Date();
+            // Render Cards
+            C.innerHTML = 
+                createCard("ความดันตัวบน (SYS)", 
+                    calculateStats(filteredBpRecords, 'systolic'), 
+                    calculateStats(morningRecs, 'systolic'), 
+                    calculateStats(eveningRecs, 'systolic'), 
+                    { bgMain: 'bg-sys-main', text: 'text-sys-main' }, 'sys') + // Pink
+                
+                createCard("ความดันตัวล่าง (DIA)", 
+                    calculateStats(filteredBpRecords, 'diastolic'), 
+                    calculateStats(morningRecs, 'diastolic'), 
+                    calculateStats(eveningRecs, 'diastolic'), 
+                    { bgMain: 'bg-dia-main', text: 'text-dia-main' }, 'dia') + // Blue
+                
+                createCard("ชีพจร (Pulse)", 
+                    calculateStats(filteredBpRecords, 'pulse'), 
+                    calculateStats(morningRecs, 'pulse'), 
+                    calculateStats(eveningRecs, 'pulse'), 
+                    { bgMain: 'bg-pulse-main', text: 'text-pulse-main' }, 'pulse'); // Brown
+        }
 
-    filteredBpRecords = allBpRecords.filter(r => {
-        const d = new Date(r.date);
-        return d >= start && d <= end;
-    });
+        /* ================================
+           RENDER: CHART
+        ================================ */
+        function renderChart() {
+            const ctx = document.getElementById("bpLineChart").getContext("2d");
+            if (bpChartInstance) bpChartInstance.destroy();
 
-    renderAverages();
-    renderChart();
-    renderTable();
-}
+            const grouped = {};
+            filteredBpRecords.forEach(r => {
+                if(!grouped[r.date]) grouped[r.date] = [];
+                grouped[r.date].push(r);
+            });
+            const dates = Object.keys(grouped).sort();
+            
+            const avgVal = (arr, k) => {
+                const vals = arr.map(i=>Number(i[k])).filter(x => x && x > 0);
+                return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+            };
 
-/* ================================
-   START APP
-================================ */
-window.onload = async () => {
-    await initLIFF();
-};
-</script>
+            bpChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates.map(d => new Date(d).toLocaleDateString("th-TH", {day:'numeric', month:'short'})),
+                    datasets: [
+                        {
+                            label: 'ตัวบน (SYS)',
+                            data: dates.map(d => avgVal(grouped[d], 'systolic')),
+                            borderColor: COLORS.sys,
+                            backgroundColor: COLORS.sys,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: COLORS.sys,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'ตัวล่าง (DIA)',
+                            data: dates.map(d => avgVal(grouped[d], 'diastolic')),
+                            borderColor: COLORS.dia,
+                            backgroundColor: COLORS.dia,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: COLORS.dia,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'ชีพจร (Pulse)',
+                            data: dates.map(d => avgVal(grouped[d], 'pulse')),
+                            borderColor: COLORS.pulse,
+                            backgroundColor: COLORS.pulse,
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: COLORS.pulse,
+                            pointRadius: 3,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#334155',
+                            bodyColor: '#475569',
+                            borderColor: '#f1f5f9',
+                            borderWidth: 1,
+                            padding: 12,
+                            titleFont: { family: "'Prompt', sans-serif", weight: '600' },
+                            bodyFont: { family: "'Prompt', sans-serif" },
+                            displayColors: true
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: {family: "'Prompt', sans-serif"}, color: '#94a3b8' } },
+                        y: { grid: { color: '#f8fafc', borderDash: [5, 5] }, ticks: { font: {family: "'Prompt', sans-serif"}, color: '#94a3b8' }, beginAtZero: false }
+                    }
+                }
+            });
+        }
 
+        /* ================================
+           RENDER: TABLE
+        ================================ */
+        function renderTable() {
+            const TB = document.getElementById("bp-table-body");
+            document.getElementById("record-count-badge").innerText = `${filteredBpRecords.length} รายการ`;
+
+            if (!filteredBpRecords.length) {
+                TB.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-300">ไม่พบข้อมูล</td></tr>`;
+                return;
+            }
+
+            // Helper for sorting times
+            const TIME_ORDER = { "เช้า": 1, "บ่าย": 2, "เย็น": 3, "ดึก": 4, "-": 99 };
+            
+            const sorted = [...filteredBpRecords].sort((a,b) => {
+                const d1 = new Date(a.date), d2 = new Date(b.date);
+                if (d1 - d2 !== 0) return d2 - d1; // Date desc
+                return TIME_ORDER[a.time] - TIME_ORDER[b.time]; // Time asc
+            });
+
+            TB.innerHTML = sorted.map(r => {
+                const status = getStatus(r.systolic, r.diastolic);
+                const timeIcon = r.time.includes('เช้า') ? '🌞' : (r.time.includes('เย็น') ? '🌙' : '');
+                
+                return `
+                <tr class="group hover:bg-orange-50/30 transition-colors border-b border-slate-50 last:border-none">
+                    <td class="px-6 py-4 whitespace-nowrap text-slate-600 font-medium">
+                        ${new Date(r.date).toLocaleDateString("th-TH", {year:'numeric', month:'short', day:'numeric'})}
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 whitespace-nowrap text-xs">
+                        <span class="px-2 py-1 rounded bg-slate-100 group-hover:bg-white transition-colors flex items-center w-fit gap-1">
+                            ${timeIcon} ${r.time}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center font-bold text-sys-main">${r.systolic || '-'}</td>
+                    <td class="px-6 py-4 text-center font-bold text-dia-main">${r.diastolic || '-'}</td>
+                    <td class="px-6 py-4 text-center font-medium text-pulse-main">${r.pulse || '-'}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="inline-block px-3 py-1 rounded-full text-[10px] tracking-wide shadow-sm ${status.color}">
+                            ${status.text}
+                        </span>
+                    </td>
+                </tr>
+                `;
+            }).join("");
+        }
+
+        /* ================================
+           INIT & FILTERS
+        ================================ */
+        function setupFilters() {
+            const s = document.getElementById("startDate");
+            const e = document.getElementById("endDate");
+            const btns = document.querySelectorAll(".quick-filter-btn");
+
+            const setActive = (btn) => {
+                btns.forEach(b => { 
+                    b.classList.remove("bg-brand-500", "text-white", "shadow-md"); 
+                    b.classList.add("border-slate-200", "text-slate-500"); 
+                });
+                if(btn) { 
+                    btn.classList.remove("border-slate-200", "text-slate-500"); 
+                    btn.classList.add("bg-brand-500", "text-white", "shadow-md"); 
+                }
+            }
+
+            const apply = (f, btn) => {
+                const now = new Date();
+                let start;
+                
+                if (f === "this-month") start = new Date(now.getFullYear(), now.getMonth(), 1);
+                else if (f === "last-3-months") start = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
+                else if (f === "this-year") start = new Date(now.getFullYear(), 0, 1);
+                else if (f === "all-time") start = new Date("2020-01-01");
+                
+                s.value = f === "all-time" ? "" : start.toISOString().split("T")[0];
+                e.value = now.toISOString().split("T")[0];
+
+                setActive(btn);
+                updateDashboard();
+            };
+
+            btns.forEach(b => b.onclick = (ev) => apply(b.dataset.filter, ev.target));
+            
+            [s, e].forEach(i => i.onchange = () => { 
+                setActive(null); 
+                updateDashboard(); 
+            });
+            
+            document.getElementById("print-button").onclick = () => window.print();
+
+            // Default filter (All time)
+            apply("all-time", document.querySelector('[data-filter="all-time"]'));
+        }
+
+        function updateDashboard() {
+            const s = document.getElementById("startDate").value;
+            const e = document.getElementById("endDate").value;
+            
+            const start = s ? new Date(s) : new Date("2000-01-01");
+            const end = e ? new Date(e + "T23:59") : new Date();
+
+            filteredBpRecords = allBpRecords.filter(r => {
+                const d = new Date(r.date);
+                return d >= start && d <= end;
+            });
+
+            renderAverages();
+            renderChart();
+            renderTable();
+        }
+
+        // Start App
+        window.onload = initLIFF;
+    </script>
 </body>
 </html>
