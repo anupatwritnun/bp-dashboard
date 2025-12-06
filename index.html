@@ -11,6 +11,9 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
+    <!-- LIFF SDK (correct version) -->
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+
     <style>
         :root { font-family: "Inter", sans-serif; }
         .bento-card {
@@ -31,7 +34,7 @@
 
     <h1 class="text-3xl font-extrabold text-center mb-6">สมุดพิทักษ์ใจ 🐠</h1>
 
-    <!-- FILTER -->
+    <!-- FILTER PANEL -->
     <div class="bento-card mb-6 no-print">
         <h2 class="text-lg font-semibold mb-4">ตัวกรองข้อมูล</h2>
 
@@ -49,19 +52,10 @@
         </div>
 
         <div class="flex flex-wrap gap-2 mb-4">
-            <button data-filter="this-month" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">
-                เดือนนี้
-            </button>
-            <button data-filter="last-3-months" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">
-                3 เดือนที่ผ่านมา
-            </button>
-            <button data-filter="this-year" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">
-                ปีนี้
-            </button>
-            <button data-filter="all-time"
-                class="quick-filter-btn px-3 py-1 text-xs border rounded-full bg-blue-500 text-white">
-                ตั้งแต่ต้น
-            </button>
+            <button data-filter="this-month" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">เดือนนี้</button>
+            <button data-filter="last-3-months" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">3 เดือนที่ผ่านมา</button>
+            <button data-filter="this-year" class="quick-filter-btn px-3 py-1 text-xs border rounded-full">ปีนี้</button>
+            <button data-filter="all-time" class="quick-filter-btn px-3 py-1 text-xs border rounded-full bg-blue-500 text-white">ตั้งแต่ต้น</button>
         </div>
 
         <button id="print-button" class="px-4 py-2 bg-indigo-600 text-white rounded-md">
@@ -69,9 +63,8 @@
         </button>
     </div>
 
-    <!-- AVERAGE -->
-    <div id="average-bento"
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"></div>
+    <!-- AVERAGE CARDS -->
+    <div id="average-bento" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"></div>
 
     <!-- CHART -->
     <div class="bento-card mb-10">
@@ -105,51 +98,71 @@
 
 <script>
 /* ================================
-   FETCH + GLOBAL STATE
+   GLOBAL STATE
 ================================ */
-
 let allBpRecords = [];
 let filteredBpRecords = [];
 let bpChartInstance = null;
 
-const urlParams = new URLSearchParams(window.location.search);
-const token = urlParams.get("token");
-
-async function loadBpData() {
-    if (!token) {
-        alert("ไม่พบ token กรุณาเข้าจาก LINE ใหม่");
-        return;
-    }
+/* ================================
+   LIFF INITIALIZATION
+================================ */
+async function initLIFF() {
     try {
-        const res = await fetch(
-            `https://n8n.srv1159869.hstgr.cloud/webhook/bp-dashboard?token=${token}`
-        );
-        const data = await res.json();
+        await liff.init({ liffId: "2008641739-Wo1qnD03" });
 
-        if (!Array.isArray(data)) {
-            alert("token ไม่ถูกต้อง / หมดอายุ");
+        if (!liff.isLoggedIn()) {
+            liff.login();
             return;
         }
 
-        // 🔥 CONVERT NULL → "-"
+        const profile = await liff.getProfile();
+        const userId = profile.userId;
+
+        console.log("LINE UserID:", userId);
+
+        await loadBpData(userId);
+        setupFilters();
+
+    } catch (err) {
+        console.error("LIFF error:", err);
+        alert("เกิดข้อผิดพลาดในการโหลด LIFF");
+    }
+}
+
+/* ================================
+   LOAD BP DATA FROM N8N
+================================ */
+async function loadBpData(userId) {
+    try {
+        const res = await fetch(
+            "https://n8n.srv1159869.hstgr.cloud/webhook/bp-dashboard",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId })
+            }
+        );
+
+        const data = await res.json();
+
         allBpRecords = data.map(r => ({
             date: r.date,
             time: r.period ?? r.time ?? "-",
-            systolic: r.systolic === 0 || r.systolic == null ? null : r.systolic,
-            diastolic: r.diastolic === 0 || r.diastolic == null ? null : r.diastolic,
-            pulse: r.pulse === 0 || r.pulse == null ? null : r.pulse
+            systolic: r.systolic ? r.systolic : null,
+            diastolic: r.diastolic ? r.diastolic : null,
+            pulse: r.pulse ? r.pulse : null
         }));
 
-    } catch (e) {
-        console.error(e);
-        alert("โหลดข้อมูลไม่สำเร็จ");
+    } catch (err) {
+        console.error("Fetch error:", err);
+        alert("โหลดข้อมูลจาก server ไม่สำเร็จ");
     }
 }
 
 /* ================================
    HELPERS
 ================================ */
-
 const TIME_ORDER = { "เช้า": 1, "บ่าย": 2, "เย็น": 3, "ดึก": 4, "-": 99 };
 
 function formatThai(d) {
@@ -158,15 +171,11 @@ function formatThai(d) {
     });
 }
 
-// filter valid numeric values only
-function validVals(arr) {
-    return arr.filter(v => v !== null && v !== 0);
-}
+const validVals = arr => arr.filter(v => v !== null);
 
 /* ================================
-   RENDER: AVERAGE CARD
+   RENDER AVERAGES
 ================================ */
-
 function renderAverages() {
     const C = document.getElementById("average-bento");
 
@@ -211,7 +220,7 @@ function renderAverages() {
     C.innerHTML = cards.map(card => `
         <div class="bento-card">
             <p class="text-sm text-gray-500">${card.title}</p>
-            <p class="text-3xl font-bold text-black">${card.value}</p>
+            <p class="text-3xl font-bold">${card.value}</p>
             <p class="text-xs text-gray-500">${card.unit}</p>
             <p class="text-xs text-gray-400 mt-1">${card.range}</p>
         </div>
@@ -219,9 +228,8 @@ function renderAverages() {
 }
 
 /* ================================
-   RENDER: CHART
+   RENDER CHART
 ================================ */
-
 function renderChart() {
     const ctx = document.getElementById("bpLineChart").getContext("2d");
 
@@ -232,7 +240,6 @@ function renderChart() {
         return;
     }
 
-    // Group by date
     const grouped = {};
     filteredBpRecords.forEach(r => {
         if (!grouped[r.date]) grouped[r.date] = [];
@@ -251,33 +258,30 @@ function renderChart() {
     const dia = dates.map(d => avgValid(grouped[d], "diastolic"));
     const pul = dates.map(d => avgValid(grouped[d], "pulse"));
 
-    // Chart.js dataset styling
     bpChartInstance = new Chart(ctx, {
         type: "line",
         data: {
             labels,
             datasets: [
                 {
-                    label: "ความดันตัวบน (Systolic)",
+                    label: "ตัวบน (SYS)",
                     data: sys,
                     borderColor: "#ef4444",
-                    backgroundColor: "rgba(239,68,68,0.15)",
+                    backgroundColor: "rgba(239,68,68,0.12)",
                     pointBackgroundColor: "#ef4444",
-                    pointBorderColor: "#7f1d1d",
-                    pointRadius: 6,
                     borderWidth: 3,
+                    pointRadius: 6,
                     tension: 0.35,
                     fill: true
                 },
                 {
-                    label: "ความดันตัวล่าง (Diastolic)",
+                    label: "ตัวล่าง (DIA)",
                     data: dia,
                     borderColor: "#3b82f6",
-                    backgroundColor: "rgba(59,130,246,0.15)",
+                    backgroundColor: "rgba(59,130,246,0.12)",
                     pointBackgroundColor: "#3b82f6",
-                    pointBorderColor: "#1e3a8a",
-                    pointRadius: 6,
                     borderWidth: 3,
+                    pointRadius: 6,
                     tension: 0.35,
                     fill: true
                 },
@@ -285,11 +289,10 @@ function renderChart() {
                     label: "ชีพจร (Pulse)",
                     data: pul,
                     borderColor: "#10b981",
-                    backgroundColor: "rgba(16,185,129,0.15)",
+                    backgroundColor: "rgba(16,185,129,0.12)",
                     pointBackgroundColor: "#10b981",
-                    pointBorderColor: "#064e3b",
-                    pointRadius: 6,
                     borderWidth: 3,
+                    pointRadius: 6,
                     tension: 0.35,
                     fill: true
                 }
@@ -297,44 +300,14 @@ function renderChart() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    ticks: { font: { size: 12 } },
-                    grid: { color: "rgba(0,0,0,0.05)" }
-                },
-                x: {
-                    ticks: { font: { size: 12 } },
-                    grid: { display: false }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: "top",
-                    labels: {
-                        font: { size: 14, weight: "600" },
-                        usePointStyle: true,
-                        pointStyle: "roundedRect"
-                    }
-                },
-                tooltip: {
-                    backgroundColor: "rgba(0,0,0,0.75)",
-                    titleFont: { size: 14 },
-                    bodyFont: { size: 13 },
-                    padding: 12,
-                    displayColors: true
-                }
-            }
+            maintainAspectRatio: false
         }
     });
 }
 
-
 /* ================================
-   RENDER: TABLE
+   RENDER TABLE
 ================================ */
-
 function renderTable() {
     const TB = document.getElementById("bp-table-body");
 
@@ -363,7 +336,6 @@ function renderTable() {
 /* ================================
    FILTER + INIT
 ================================ */
-
 function setupFilters() {
     const s = document.getElementById("startDate");
     const e = document.getElementById("endDate");
@@ -409,12 +381,13 @@ function updateDashboard() {
     renderTable();
 }
 
+/* ================================
+   START APP
+================================ */
 window.onload = async () => {
-    await loadBpData();
-    setupFilters();
+    await initLIFF();
 };
 </script>
 
 </body>
 </html>
-
