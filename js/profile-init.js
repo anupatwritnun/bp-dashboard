@@ -1,6 +1,9 @@
 async function initProfile(){
-    await liff.init({ liffId:"YOUR_LIFF_ID" });
-    if(!liff.isLoggedIn()) return liff.login();
+    await liff.init({ liffId:"2008641952-nWd4qpk6" });
+    if (!liff.isLoggedIn()) {
+    return liff.login({ redirectUri: location.href });
+}
+
 
     const profile = await liff.getProfile();
 

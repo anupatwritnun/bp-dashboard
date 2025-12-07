@@ -2,7 +2,6 @@ async function initLIFF() {
     try {
         await liff.init({ liffId: "2008641952-nWd4qpk6" });
 
-        // <<< แก้ตรงนี้
         if (!liff.isLoggedIn()) {
             return liff.login({
                 redirectUri: window.location.href
@@ -12,12 +11,15 @@ async function initLIFF() {
         const profile = await liff.getProfile();
         window.userId = profile.userId;
 
-        document.querySelector("#loading-screen p").innerText = "กำลังโหลดข้อมูล...";
-        await loadBpData(profile.userId);
+        // ให้ dashboard ใช้งานต่อ
+        if (typeof onLiffReady === "function") {
+            onLiffReady(profile);
+        }
 
-        setupFilters();
     } catch (err) {
         console.error(err);
-        alert("ไม่สามารถโหลด LIFF");
+        alert("โหลด LIFF ไม่สำเร็จ");
     }
 }
+
+initLIFF();
