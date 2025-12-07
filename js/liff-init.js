@@ -2,7 +2,12 @@ async function initLIFF() {
     try {
         await liff.init({ liffId: "2008641952-nWd4qpk6" });
 
-        if (!liff.isLoggedIn()) return liff.login();
+        // <<< แก้ตรงนี้
+        if (!liff.isLoggedIn()) {
+            return liff.login({
+                redirectUri: window.location.href
+            });
+        }
 
         const profile = await liff.getProfile();
         window.userId = profile.userId;
