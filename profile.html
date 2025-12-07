@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ปลาท๊องง | Profile</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <link rel="stylesheet" href="./css/profile.css" />
+</head>
+
+<body class="min-h-screen">
+
+    <!-- SHARE MODAL -->
+    <div id="shareModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50">
+        <!-- จะให้ JS inject ข้างใน -->
+    </div>
+
+    <!-- MAIN PROFILE UI -->
+    <div class="max-w-5xl mx-auto p-4">
+        <div id="profileHeader"></div>
+        <div id="fishSection"></div>
+        <div id="userInfo"></div>
+        <div id="statsGrid"></div>
+    </div>
+
+    <!-- Load profile scripts -->
+    <script src="./js/profile-fish.js"></script>
+    <script src="./js/profile-share.js"></script>
+    <script src="./js/profile-render.js"></script>
+    <script src="./js/profile-init.js"></script>
+</body>
+</html>

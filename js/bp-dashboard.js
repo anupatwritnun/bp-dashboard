@@ -1,0 +1,1 @@
+renderAverages(), renderChart(), renderTable(), setupFilters()
