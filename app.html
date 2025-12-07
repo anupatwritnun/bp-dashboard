@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สมุดพิทักษ์ใจ 🐠 | Plathong SPA</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js + LIFF + html2canvas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Prompt', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page-active {
+      display: block;
+    }
+
+    .loader-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.9);
+      z-index: 50;
+    }
+
+    .loader {
+      border: 3px solid #fee2e2;
+      border-top: 3px solid #f97316;
+      border-radius: 999px;
+      width: 40px;
+      height: 40px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes swim {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-6px);
+      }
+    }
+
+    @keyframes wag {
+      0%, 100% {
+        transform: rotate(12deg);
+      }
+      50% {
+        transform: rotate(-12deg);
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+  <!-- Global Loader -->
+  <div id="global-loader" class="loader-overlay">
+    <div class="loader mb-3"></div>
+    <p id="global-loader-text" class="text-slate-600 text-sm">กำลังเชื่อมต่อ LINE...</p>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-2">
+      <div class="bg-orange-100 text-orange-500 p-2 rounded-xl">
+        🐠
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-slate-800">สมุดพิทักษ์ใจ</h1>
+        <p class="text-[11px] text-slate-400" id="nav-username">กำลังโหลดโปรไฟล์...</p>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 space-y-4">
+
+    <!-- HOME PAGE -->
+    <section id="page-home" class="page page-active">
+      <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 mb-4">
+        <h2 class="text-xl font-bold mb-2">ยินดีต้อนรับ 👋</h2>
+        <p class="text-sm text-slate-500">
+          ปลาท๊องงจะช่วยจดความดันของคุณ และแปลงเป็นสถิติที่ดูง่าย
+        </p>
+
+        <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+          <button onclick="navigate('dashboard')" class="px-4 py-3 rounded-2xl bg-orange-500 text-white font-semibold shadow-md">
+            ไปหน้า Dashboard
+          </button>
+          <button onclick="navigate('profile')" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-semibold">
+            ดูโปรไฟล์สุขภาพ
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-cyan-100/80 to-blue-100/80 rounded-3xl p-6 shadow relative overflow-hidden">
+        <h3 class="text-sm font-bold text-slate-700 mb-2">วันนี้คุณบันทึกความดันหรือยัง?</h3>
+        <p class="text-xs text-slate-500 mb-4">
+          เข้าหน้า Dashboard เพื่อดูแนวโน้ม และให้ปลาท๊องงดูแลต่อเนื่อง
+        </p>
+        <button onclick="navigate('dashboard')" class="px-4 py-2 rounded-full bg-white text-slate-700 text-sm font-semibold shadow">
+          เปิด Dashboard
+        </button>
+        <div class="absolute right-6 bottom-2">
+          <div class="relative w-32 h-24 animate-[swim_4s_ease-in-out_infinite]">
+            <div class="absolute -right-6 top-1/2 -translate-y-1/2 border-y-[10px] border-y-transparent border-l-[24px] animate-[wag_1s_infinite]" style="border-left-color:#ea580c;"></div>
+            <div class="absolute inset-0 rounded-[50%]" style="background: radial-gradient(circle at 30% 30%, #fed7aa, #f97316);"></div>
+            <div class="absolute left-4 top-3 w-5 h-5 bg-white rounded-full flex items-center justify-center">
+              <div class="w-2.5 h-2.5 bg-slate-900 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD PAGE -->
+    <section id="page-dashboard" class="page">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold text-slate-800">Dashboard ความดัน</h2>
+        <button onclick="printDashboard()" class="text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white">
+          พิมพ์รายงาน
+        </button>
+      </div>
+
+      <!-- Simple filter: future hook for your advanced filters -->
+      <div class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
+        <p class="text-xs text-slate-500 mb-2">ช่วงวันที่ (TODO: คุณเอา filter เดิมมาแปะได้)</p>
+        <div class="grid grid-cols-2 gap-2">
+          <input id="dash-start" type="date" class="border rounded-xl px-3 py-2 text-sm">
+          <input id="dash-end" type="date" class="border rounded-xl px-3 py-2 text-sm">
+        </div>
+        <button onclick="refreshDashboard()" class="mt-3 w-full text-xs px-3 py-2 rounded-xl bg-slate-900 text-white">
+          รีเฟรชข้อมูล
+        </button>
+      </div>
+
+      <div id="dash-stats" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <!-- dashboard.js จะ render -->
+      </div>
+
+      <div class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
+        <canvas id="bpLineChart" class="w-full h-[260px]"></canvas>
+      </div>
+
+      <div class="bg-white rounded-3xl p-4 shadow border border-slate-100">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-sm font-bold">ประวัติการบันทึก</h3>
+          <span id="dash-count" class="text-[11px] text-slate-400">0 รายการ</span>
+        </div>
+        <div class="max-h-72 overflow-y-auto">
+          <table class="w-full text-xs">
+            <thead class="sticky top-0 bg-slate-50">
+              <tr>
+                <th class="px-2 py-1 text-left">วันที่</th>
+                <th class="px-2 py-1 text-left">เวลา</th>
+                <th class="px-2 py-1 text-center">SYS</th>
+                <th class="px-2 py-1 text-center">DIA</th>
+                <th class="px-2 py-1 text-center">Pulse</th>
+              </tr>
+            </thead>
+            <tbody id="dash-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROFILE PAGE -->
+    <section id="page-profile" class="page">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold text-slate-800">โปรไฟล์สุขภาพ</h2>
+        <button onclick="openShareModal()" class="px-3 py-1.5 rounded-full bg-green-500 text-xs text-white font-semibold">
+          แชร์ความสำเร็จ
+        </button>
+      </div>
+
+      <!-- User info -->
+      <div id="profile-card" class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
+        <!-- profile.js จะใส่ข้อมูล LIFF + ระดับ -->
+      </div>
+
+      <!-- Stats -->
+      <div id="profile-stats" class="grid grid-cols-2 gap-3 mb-4">
+        <!-- profile.js เติม -->
+      </div>
+
+      <!-- Fish section -->
+      <div id="profile-fish" class="bg-gradient-to-br from-cyan-100/80 to-blue-100/80 rounded-3xl p-4 shadow">
+        <!-- profile.js วาดปลาท๊องง + ตัวเลือก -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="bg-white border-t border-slate-200 px-4 py-2 flex justify-around text-xs text-slate-500">
+    <button data-nav="home" onclick="navigate('home')" class="flex flex-col items-center gap-0.5">
+      <span>🏠</span><span>Home</span>
+    </button>
+    <button data-nav="dashboard" onclick="navigate('dashboard')" class="flex flex-col items-center gap-0.5">
+      <span>📊</span><span>Dashboard</span>
+    </button>
+    <button data-nav="profile" onclick="navigate('profile')" class="flex flex-col items-center gap-0.5">
+      <span>👤</span><span>Profile</span>
+    </button>
+  </nav>
+
+  <!-- JS (order matters: feature modules before app.js) -->
+  <script src="./js/dashboard.js"></script>
+  <script src="./js/profile.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+
+</html>
