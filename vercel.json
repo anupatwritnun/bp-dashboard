@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/profile.html",
+      "destination": "/profile.html"
+    },
+    {
+      "source": "/dashboard.html",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
