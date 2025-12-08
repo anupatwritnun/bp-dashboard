@@ -4,9 +4,16 @@ const API_URL = "https://n8n.srv1159869.hstgr.cloud/webhook/bp-dashboard";
 async function loadDashboardData() {
   if (!AppState.userId) return;
 
-  const url = `${API_URL}?user_id=${encodeURIComponent(AppState.userId)}`;
-  const res = await fetch(url);
-  const data = await res.json();
+ const res = await fetch(API_URL, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    user_id: AppState.userId
+  })
+});
+
 
   // expected structure from n8n code node:
   // { profile: {...}, records: [...] }
