@@ -34,7 +34,7 @@ async function initApp() {
 
   try {
     loaderText.textContent = "กำลังเชื่อมต่อ LINE...";
-    await liff.init({ liffId: "2008641952-nWd4qpk6" });
+    await liff.init({ liffId: "2008652706-EZVkykgG" });
 
     if (!liff.isLoggedIn()) {
       return liff.login({ redirectUri: window.location.href });
