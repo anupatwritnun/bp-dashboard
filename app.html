@@ -98,41 +98,28 @@
   <!-- MAIN -->
   <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 space-y-4">
 
-    <!-- HOME PAGE -->
-    <section id="page-home" class="page page-active">
-      <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 mb-4">
-        <h2 class="text-xl font-bold mb-2">ยินดีต้อนรับ 👋</h2>
-        <p class="text-sm text-slate-500">
-          ปลาท๊องงจะช่วยจดความดันของคุณ และแปลงเป็นสถิติที่ดูง่าย
-        </p>
-
-        <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-          <button onclick="navigate('dashboard')" class="px-4 py-3 rounded-2xl bg-orange-500 text-white font-semibold shadow-md">
-            ไปหน้า Dashboard
-          </button>
-          <button onclick="navigate('profile')" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-semibold">
-            ดูโปรไฟล์สุขภาพ
-          </button>
-        </div>
+    <!-- PROFILE PAGE (DEFAULT FIRST) -->
+    <section id="page-profile" class="page page-active">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold text-slate-800">โปรไฟล์สุขภาพ</h2>
+        <button onclick="openShareModal()" class="px-3 py-1.5 rounded-full bg-green-500 text-xs text-white font-semibold">
+          แชร์ความสำเร็จ
+        </button>
       </div>
 
-      <div class="bg-gradient-to-br from-cyan-100/80 to-blue-100/80 rounded-3xl p-6 shadow relative overflow-hidden">
-        <h3 class="text-sm font-bold text-slate-700 mb-2">วันนี้คุณบันทึกความดันหรือยัง?</h3>
-        <p class="text-xs text-slate-500 mb-4">
-          เข้าหน้า Dashboard เพื่อดูแนวโน้ม และให้ปลาท๊องงดูแลต่อเนื่อง
-        </p>
-        <button onclick="navigate('dashboard')" class="px-4 py-2 rounded-full bg-white text-slate-700 text-sm font-semibold shadow">
-          เปิด Dashboard
-        </button>
-        <div class="absolute right-6 bottom-2">
-          <div class="relative w-32 h-24 animate-[swim_4s_ease-in-out_infinite]">
-            <div class="absolute -right-6 top-1/2 -translate-y-1/2 border-y-[10px] border-y-transparent border-l-[24px] animate-[wag_1s_infinite]" style="border-left-color:#ea580c;"></div>
-            <div class="absolute inset-0 rounded-[50%]" style="background: radial-gradient(circle at 30% 30%, #fed7aa, #f97316);"></div>
-            <div class="absolute left-4 top-3 w-5 h-5 bg-white rounded-full flex items-center justify-center">
-              <div class="w-2.5 h-2.5 bg-slate-900 rounded-full"></div>
-            </div>
-          </div>
-        </div>
+      <!-- User info -->
+      <div id="profile-card" class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
+        <!-- profile.js will inject LIFF name, photo, XP bar, level -->
+      </div>
+
+      <!-- Stats -->
+      <div id="profile-stats" class="grid grid-cols-2 gap-3 mb-4">
+        <!-- profile.js injects stats -->
+      </div>
+
+      <!-- Fish section -->
+      <div id="profile-fish" class="bg-gradient-to-br from-cyan-100/80 to-blue-100/80 rounded-3xl p-4 shadow">
+        <!-- Goldfish display -->
       </div>
     </section>
 
@@ -145,9 +132,8 @@
         </button>
       </div>
 
-      <!-- Simple filter: future hook for your advanced filters -->
       <div class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
-        <p class="text-xs text-slate-500 mb-2">ช่วงวันที่ (TODO: คุณเอา filter เดิมมาแปะได้)</p>
+        <p class="text-xs text-slate-500 mb-2">ช่วงวันที่</p>
         <div class="grid grid-cols-2 gap-2">
           <input id="dash-start" type="date" class="border rounded-xl px-3 py-2 text-sm">
           <input id="dash-end" type="date" class="border rounded-xl px-3 py-2 text-sm">
@@ -157,11 +143,9 @@
         </button>
       </div>
 
-      <div id="dash-stats" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-        <!-- dashboard.js จะ render -->
-      </div>
+      <div id="dash-stats" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4"></div>
 
-      <div class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
+      <div class="bg-white rounded-3xl p-4 shadow border-slate-100 mb-4">
         <canvas id="bpLineChart" class="w-full h-[260px]"></canvas>
       </div>
 
@@ -186,38 +170,10 @@
         </div>
       </div>
     </section>
-
-    <!-- PROFILE PAGE -->
-    <section id="page-profile" class="page">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold text-slate-800">โปรไฟล์สุขภาพ</h2>
-        <button onclick="openShareModal()" class="px-3 py-1.5 rounded-full bg-green-500 text-xs text-white font-semibold">
-          แชร์ความสำเร็จ
-        </button>
-      </div>
-
-      <!-- User info -->
-      <div id="profile-card" class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
-        <!-- profile.js จะใส่ข้อมูล LIFF + ระดับ -->
-      </div>
-
-      <!-- Stats -->
-      <div id="profile-stats" class="grid grid-cols-2 gap-3 mb-4">
-        <!-- profile.js เติม -->
-      </div>
-
-      <!-- Fish section -->
-      <div id="profile-fish" class="bg-gradient-to-br from-cyan-100/80 to-blue-100/80 rounded-3xl p-4 shadow">
-        <!-- profile.js วาดปลาท๊องง + ตัวเลือก -->
-      </div>
-    </section>
   </main>
 
-  <!-- Bottom Nav -->
+  <!-- BOTTOM NAV -->
   <nav class="bg-white border-t border-slate-200 px-4 py-2 flex justify-around text-xs text-slate-500">
-    <button data-nav="home" onclick="navigate('home')" class="flex flex-col items-center gap-0.5">
-      <span>🏠</span><span>Home</span>
-    </button>
     <button data-nav="dashboard" onclick="navigate('dashboard')" class="flex flex-col items-center gap-0.5">
       <span>📊</span><span>Dashboard</span>
     </button>
@@ -226,10 +182,10 @@
     </button>
   </nav>
 
-  <!-- JS (order matters: feature modules before app.js) -->
+  <!-- Modules -->
   <script src="./js/dashboard.js"></script>
   <script src="./js/profile.js"></script>
   <script src="./js/app.js"></script>
-</body>
 
+</body>
 </html>
