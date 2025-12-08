@@ -3,7 +3,22 @@
  * Responsibility: Render the gamified profile UI and handle sharing.
  */
 
-const LINE_OA_LINK = "https://lin.ee/diZ5ylu"; // Your Link
+const LINE_OA_LINK = "https://lin.ee/diZ5ylu"; 
+
+// --- XP CONFIGURATION ---
+// "Level" is achieved when you reach "minXP"
+const xpLevels = [
+    { level: 1, minXP: 0, nextXP: 50 },
+    { level: 2, minXP: 50, nextXP: 100 },
+    { level: 3, minXP: 100, nextXP: 200 },
+    { level: 4, minXP: 200, nextXP: 500 },
+    { level: 5, minXP: 500, nextXP: 1000 },
+    { level: 6, minXP: 1000, nextXP: 2000 },
+    { level: 7, minXP: 2000, nextXP: 5000 },
+    { level: 8, minXP: 5000, nextXP: 10000 },
+    { level: 9, minXP: 10000, nextXP: 20000 },
+    { level: 10, minXP: 20000, nextXP: 999999 } // Max level
+];
 
 // --- HELPER: Generate CSS Goldfish HTML ---
 function getGoldfishHTML(primary, secondary) {
@@ -53,16 +68,39 @@ function renderProfile() {
         return;
     }
 
-    // 2. Prepare Variables
-    const level = stats.level || 1;
+    // 2. Prepare Variables & Calculate Level
+    const currentXP = stats.xp_total || 0;
     const streak = stats.current_streak || 0;
     const totalLogs = stats.total_log_days || 0;
-    const currentXP = stats.xp_total || 0;
-    const nextXP = 1000; 
-    const xpPercent = Math.min((currentXP / nextXP) * 100, 100);
     
     // Hardcoded Colors for "Gold" Fish
     const fishColor = { primary: "#fbbf24", secondary: "#ea580c" };
+
+    // Find current level based on XP table
+    let levelInfo = xpLevels[0];
+    for (let i = 0; i < xpLevels.length; i++) {
+        if (currentXP >= xpLevels[i].minXP) {
+            levelInfo = xpLevels[i];
+        } else {
+            break;
+        }
+    }
+
+    const level = levelInfo.level;
+    const nextXP = levelInfo.nextXP;
+    const prevXP = levelInfo.minXP;
+
+    // Calculate percentage based on range (so the bar fills up for the current level)
+    // Formula: (Current - Base) / (Goal - Base)
+    let percentCalc = 0;
+    if (level === 10) {
+        percentCalc = 100; // Max level
+    } else {
+        const range = nextXP - prevXP;
+        const progress = currentXP - prevXP;
+        percentCalc = Math.min((progress / range) * 100, 100);
+    }
+    const xpPercent = percentCalc;
 
     // 3. Build HTML Template
     container.innerHTML = `
@@ -106,7 +144,7 @@ function renderProfile() {
                     <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">แต้มสุขภาพ (XP)</p>
                     <div class="flex items-baseline gap-2 mt-1">
                         <span class="text-3xl font-black text-slate-800 tracking-tight">${currentXP}</span>
-                        <span class="text-slate-400 font-medium text-sm">/ ${nextXP}</span>
+                        <span class="text-slate-400 font-medium text-sm">/ ${nextXP > 900000 ? 'MAX' : nextXP}</span>
                     </div>
                 </div>
                 <div class="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">
@@ -121,7 +159,7 @@ function renderProfile() {
             </div>
             <p class="mt-3 text-xs text-slate-400 font-medium flex items-center gap-2">
                 <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                บันทึกต่อเนื่องเพื่อรับโบนัส XP!
+                ${level === 10 ? 'คุณคือสุดยอดผู้พิทักษ์!' : 'บันทึกต่อเนื่องเพื่อรับโบนัส XP!'}
             </p>
         </div>
 
@@ -294,7 +332,6 @@ window.generateAndShare = function() {
             link.href = image;
             link.click();
             
-            // Try copying text to clipboard
             try {
                 await navigator.clipboard.writeText(`${shareText}\n${LINE_OA_LINK}`);
                 alert("บันทึกรูปแล้ว! ข้อความถูกคัดลอกไปยัง Clipboard");
