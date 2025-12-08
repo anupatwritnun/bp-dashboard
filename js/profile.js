@@ -1,60 +1,26 @@
-// ===============================
-// PROFILE.JS
-// ===============================
+// ===== PROFILE.JS =====
 
-// n8n endpoint returning { profile: {...}, records: [...] }
-const API_URL = "https://n8n.srv1159869.hstgr.cloud/webhook/bp-dashboard"; // <-- put your URL
-
-// DOM elements
 const navUsername = document.getElementById("nav-username");
 const profileCard = document.getElementById("profile-card");
 const profileStats = document.getElementById("profile-stats");
 const profileFish = document.getElementById("profile-fish");
 
-// ===============================
-// Initialize LIFF + Load Everything
-// ===============================
-async function initProfilePage() {
-  try {
-    // LIFF init
-    await liff.init({ liffId: "2008641952-nWd4qpk6" });
+function renderProfile() {
+  const line = AppState.profile;
+  const p = AppState.profileStats;
 
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-
-    // Get LINE profile
-    const line = await liff.getProfile();
-    navUsername.textContent = line.displayName;
-
-    // Fetch XP, streak, logs from your API
-    const data = await fetchProfileData(line.userId);
-
-    // Render everything
-    renderProfileCard(data.profile, line);
-    renderProfileStats(data.profile);
-    renderProfileFish(data.profile.level);
-
-  } catch (err) {
-    console.error("Profile init error:", err);
-    navUsername.textContent = "เกิดข้อผิดพลาด";
+  if (!line || !p) {
+    profileCard.innerHTML = `
+      <p class="text-sm text-slate-500">กำลังโหลดข้อมูลโปรไฟล์...</p>
+    `;
+    profileStats.innerHTML = "";
+    profileFish.innerHTML = "";
+    return;
   }
-}
 
-// ===============================
-// Call n8n to retrieve profile + logs
-// ===============================
-async function fetchProfileData(userId) {
-  const res = await fetch(API_URL + "?user_id=" + userId);
-  const data = await res.json();
-  return data;  // { profile, records }
-}
+  // --- Profile card (ชื่อ, รูป, LV, XP bar) ---
+  const xpPercent = p.xp_percent ?? 0;
 
-// ===============================
-// Render: User profile card
-// ===============================
-function renderProfileCard(p, line) {
   profileCard.innerHTML = `
     <div class="flex gap-4 items-center">
       <img src="${line.pictureUrl}" class="w-16 h-16 rounded-full shadow-md border" />
@@ -66,7 +32,7 @@ function renderProfileCard(p, line) {
         <div class="mt-2 w-full bg-slate-200 rounded-full h-3">
           <div 
             class="h-3 rounded-full bg-orange-500 transition-all" 
-            style="width: ${p.xp_percent}%;"></div>
+            style="width: ${xpPercent}%;"></div>
         </div>
         <p class="text-[11px] text-slate-500 mt-1">
           XP: ${p.xp_total.toLocaleString()} / ${p.xp_range.next.toLocaleString()}
@@ -74,12 +40,8 @@ function renderProfileCard(p, line) {
       </div>
     </div>
   `;
-}
 
-// ===============================
-// Render: Stats grid
-// ===============================
-function renderProfileStats(p) {
+  // --- Stats tiles ---
   profileStats.innerHTML = `
     <div class="bg-white border border-slate-100 rounded-2xl p-3 shadow">
       <p class="text-xs text-slate-400 mb-1">จำนวนการบันทึก</p>
@@ -91,12 +53,8 @@ function renderProfileStats(p) {
       <p class="font-bold text-lg">${p.streak_text}</p>
     </div>
   `;
-}
 
-// ===============================
-// Render: Goldfish mascot
-// ===============================
-function renderProfileFish(level) {
+  // --- Fish section ---
   profileFish.innerHTML = `
     <h3 class="text-sm font-bold text-slate-700 mb-2">ระดับการเติบโตของปลาท๊องง</h3>
 
@@ -111,12 +69,9 @@ function renderProfileFish(level) {
     </div>
 
     <p class="text-center mt-2 text-sm text-slate-600">
-      ตอนนี้ปลาท๊องงของคุณอยู่ที่ <strong>LV.${level}</strong>
+      ตอนนี้ปลาท๊องงของคุณอยู่ที่ <strong>LV.${p.level}</strong>
     </p>
   `;
 }
 
-// ===============================
-// Run on load
-// ===============================
-document.addEventListener("DOMContentLoaded", initProfilePage);
+window.renderProfile = renderProfile;

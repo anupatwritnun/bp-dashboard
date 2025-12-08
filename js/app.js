@@ -1,9 +1,9 @@
 // ===== Global app state =====
 window.AppState = {
   userId: null,
-  profile: null,
-  bpRecords: [],
-  profileStats: null
+  profile: null,        // LINE profile (displayName, pictureUrl)
+  bpRecords: [],        // from n8n -> records[]
+  profileStats: null    // from n8n -> profile{}
 };
 
 // ===== Simple SPA Router =====
@@ -14,7 +14,6 @@ function navigate(page) {
   const target = document.getElementById(`page-${page}`);
   if (target) target.classList.add("page-active");
 
-  // update bottom nav active style
   document.querySelectorAll("nav [data-nav]").forEach(btn => {
     if (btn.getAttribute("data-nav") === page) {
       btn.classList.add("text-orange-500", "font-semibold");
@@ -46,17 +45,18 @@ async function initApp() {
     AppState.userId = profile.userId;
     AppState.profile = profile;
 
-    document.getElementById("nav-username").textContent = profile.displayName || "ผู้ใช้ LINE";
+    document.getElementById("nav-username").textContent =
+      profile.displayName || "ผู้ใช้ LINE";
 
-    // Load dashboard data
-    loaderText.textContent = "กำลังโหลดข้อมูล Dashboard...";
-    await loadDashboardData(); // must exist in dashboard.js
+    // เรียก n8n เพื่อดึง profile + records
+    loaderText.textContent = "กำลังโหลดข้อมูลจากเซิร์ฟเวอร์...";
+    await loadDashboardData();   // จาก dashboard.js (ดูด้านล่าง)
 
-    // Render dashboard UI
-    renderDashboard();  
+    // render ทั้ง Dashboard + Profile จาก AppState
+    renderDashboard();           // dashboard.js
+    renderProfile();             // profile.js
 
-    // Profile page script runs automatically from profile.js (initProfilePage)
-
+    // default page = profile
     navigate("profile");
 
   } catch (err) {
@@ -67,20 +67,16 @@ async function initApp() {
   }
 }
 
-// Refresh dashboard
+// สำหรับปุ่มรีเฟรช dashboard
 async function refreshDashboard() {
   if (!AppState.userId) return;
-
   const btn = event?.target;
-
   if (btn) {
     btn.disabled = true;
     btn.textContent = "กำลังโหลด...";
   }
-
   await loadDashboardData();
   renderDashboard();
-
   if (btn) {
     btn.disabled = false;
     btn.textContent = "รีเฟรชข้อมูล";
