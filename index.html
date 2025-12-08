@@ -6,18 +6,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>สมุดพิทักษ์ใจ 🐠 | Plathong SPA</title>
 
-  <!-- Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Chart.js + LIFF + html2canvas -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#f97316',
+              600: '#ea580c',
+            },
+            sys: {
+              light: '#fce7f3',
+              main: '#ec4899',
+              dark: '#be185d',
+            },
+            dia: {
+              light: '#e0f2fe',
+              main: '#0ea5e9',
+              dark: '#0369a1',
+            },
+            pulse: {
+              light: '#fef3c7',
+              main: '#92400e',
+              dark: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     body {
       font-family: 'Prompt', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #f8fafc;
+      background-color: #fdfbf7;
+      background-image: radial-gradient(#e7e5e4 1px, transparent 1px);
+      background-size: 24px 24px;
     }
 
     .page {
@@ -26,8 +66,22 @@
 
     .page-active {
       display: block;
+      animation: fadeIn 0.3s ease-in-out;
     }
 
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- Animations for Goldfish Profile --- */
+    @keyframes float { 0%, 100% { transform: translateY(0); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
+    @keyframes swim { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(2deg); } }
+    @keyframes wag { 0%, 100% { transform: rotate(15deg); } 50% { transform: rotate(-15deg); } }
+    @keyframes paddle { 0%, 100% { transform: rotate(0deg) scaleX(1); } 50% { transform: rotate(-10deg) scaleX(0.8); } }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+    /* --- Global Loader --- */
     .loader-overlay {
       position: fixed;
       inset: 0;
@@ -40,9 +94,9 @@
     }
 
     .loader {
-      border: 3px solid #fee2e2;
+      border: 3px solid #fff7ed;
       border-top: 3px solid #f97316;
-      border-radius: 999px;
+      border-radius: 50%;
       width: 40px;
       height: 40px;
       animation: spin 0.8s linear infinite;
@@ -54,126 +108,198 @@
       }
     }
 
-    @keyframes swim {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-6px);
-      }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
     }
 
-    @keyframes wag {
-      0%, 100% {
-        transform: rotate(12deg);
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #fff7ed;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #fdba74;
+      border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #fb923c;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
       }
-      50% {
-        transform: rotate(-12deg);
+
+      body {
+        background: white;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .chart-container {
+        height: 400px !important;
       }
     }
   </style>
 </head>
 
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col text-slate-700 antialiased">
 
-  <!-- Global Loader -->
   <div id="global-loader" class="loader-overlay">
     <div class="loader mb-3"></div>
     <p id="global-loader-text" class="text-slate-600 text-sm">กำลังเชื่อมต่อ LINE...</p>
   </div>
 
-  <!-- Navbar -->
-  <nav class="bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between shadow-sm">
-    <div class="flex items-center gap-2">
-      <div class="bg-orange-100 text-orange-500 p-2 rounded-xl">
-        🐠
-      </div>
-      <div>
-        <h1 class="text-lg font-bold text-slate-800">สมุดพิทักษ์ใจ</h1>
-        <p class="text-[11px] text-slate-400" id="nav-username">กำลังโหลดโปรไฟล์...</p>
+  <nav class="bg-white/90 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <div class="flex items-center gap-3">
+          <div class="bg-brand-50 text-brand-500 p-2 rounded-xl shadow-sm border border-brand-100">
+            🐠
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-slate-800 tracking-tight">
+              สมุดพิทักษ์ใจ <span class="text-brand-500">ปลาท๊องง</span>
+            </h1>
+            <p class="text-[11px] text-slate-400" id="nav-username">กำลังโหลดโปรไฟล์...</p>
+          </div>
+        </div>
+        <button
+          onclick="printDashboard()"
+          class="no-print hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-600 hover:text-brand-600 hover:border-brand-200 hover:bg-brand-50 transition-all shadow-sm">
+          🖨 พิมพ์รายงาน
+        </button>
       </div>
     </div>
   </nav>
 
-  <!-- MAIN -->
-  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 space-y-4">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-6 pb-24">
 
-    <!-- PROFILE PAGE (DEFAULT FIRST) -->
-    <section id="page-profile" class="page page-active">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold text-slate-800">โปรไฟล์สุขภาพ</h2>
-        <button onclick="openShareModal()" class="px-3 py-1.5 rounded-full bg-green-500 text-xs text-white font-semibold">
-          แชร์ความสำเร็จ
-        </button>
-      </div>
-
-      <!-- User info -->
-      <div id="profile-card" class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
-        <!-- profile.js will inject LIFF name, photo, XP bar, level -->
-      </div>
-
-      <!-- Stats -->
-      <div id="profile-stats" class="grid grid-cols-2 gap-3 mb-4">
-        <!-- profile.js injects stats -->
-      </div>
-
-      <!-- Fish section -->
-      <div id="profile-fish" class="bg-gradient-to-br from-cyan-100/80 to-blue-100/80 rounded-3xl p-4 shadow">
-        <!-- Goldfish display -->
-      </div>
-    </section>
-
-    <!-- DASHBOARD PAGE -->
     <section id="page-dashboard" class="page">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold text-slate-800">Dashboard ความดัน</h2>
-        <button onclick="printDashboard()" class="text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white">
-          พิมพ์รายงาน
-        </button>
-      </div>
 
-      <div class="bg-white rounded-3xl p-4 shadow border border-slate-100 mb-4">
-        <p class="text-xs text-slate-500 mb-2">ช่วงวันที่</p>
-        <div class="grid grid-cols-2 gap-2">
-          <input id="dash-start" type="date" class="border rounded-xl px-3 py-2 text-sm">
-          <input id="dash-end" type="date" class="border rounded-xl px-3 py-2 text-sm">
+      <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 mb-8 no-print">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+            <span class="w-1.5 h-6 bg-brand-500 rounded-full"></span>
+            ช่วงเวลาที่ต้องการดู
+          </h2>
+
+          <div class="flex flex-wrap gap-2 justify-center">
+            <button data-filter="this-month"
+              class="quick-filter-btn px-5 py-2 text-xs font-semibold rounded-full border border-slate-200 text-slate-500 hover:border-brand-300 hover:text-brand-600 transition-all">
+              เดือนนี้
+            </button>
+            <button data-filter="last-3-months"
+              class="quick-filter-btn px-5 py-2 text-xs font-semibold rounded-full border border-slate-200 text-slate-500 hover:border-brand-300 hover:text-brand-600 transition-all">
+              3 เดือน
+            </button>
+            <button data-filter="this-year"
+              class="quick-filter-btn px-5 py-2 text-xs font-semibold rounded-full border border-slate-200 text-slate-500 hover:border-brand-300 hover:text-brand-600 transition-all">
+              ปีนี้
+            </button>
+            <button data-filter="all-time"
+              class="quick-filter-btn px-5 py-2 text-xs font-semibold rounded-full bg-brand-500 text-white shadow-md shadow-brand-500/20 border-transparent hover:bg-brand-600">
+              ทั้งหมด
+            </button>
+          </div>
         </div>
-        <button onclick="refreshDashboard()" class="mt-3 w-full text-xs px-3 py-2 rounded-xl bg-slate-900 text-white">
-          รีเฟรชข้อมูล
-        </button>
-      </div>
 
-      <div id="dash-stats" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4"></div>
-
-      <div class="bg-white rounded-3xl p-4 shadow border-slate-100 mb-4">
-        <canvas id="bpLineChart" class="w-full h-[260px]"></canvas>
-      </div>
-
-      <div class="bg-white rounded-3xl p-4 shadow border border-slate-100">
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="text-sm font-bold">ประวัติการบันทึก</h3>
-          <span id="dash-count" class="text-[11px] text-slate-400">0 รายการ</span>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="relative group">
+            <label
+              class="absolute -top-2.5 left-4 bg-white px-2 text-[10px] text-brand-500 font-bold uppercase tracking-wider">
+              เริ่มต้น
+            </label>
+            <input id="dash-start" type="date"
+              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all group-hover:bg-white">
+          </div>
+          <div class="relative group">
+            <label
+              class="absolute -top-2.5 left-4 bg-white px-2 text-[10px] text-brand-500 font-bold uppercase tracking-wider">
+              สิ้นสุด
+            </label>
+            <input id="dash-end" type="date"
+              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all group-hover:bg-white">
+          </div>
         </div>
-        <div class="max-h-72 overflow-y-auto">
-          <table class="w-full text-xs">
-            <thead class="sticky top-0 bg-slate-50">
+
+        <div class="mt-6 flex justify-end border-t border-slate-100 pt-4 sm:hidden">
+          <button onclick="printDashboard()"
+            class="w-full flex justify-center items-center gap-2 px-6 py-3 bg-brand-500 text-white rounded-xl shadow-lg shadow-brand-500/30 hover:bg-brand-600 transition-all font-medium text-sm">
+            🖨 พิมพ์รายงาน / PDF
+          </button>
+        </div>
+      </div>
+
+      <div id="dash-stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
+
+      <div
+        class="bg-white rounded-[2rem] shadow-lg shadow-brand-500/5 border border-slate-100 p-8 mb-10 relative overflow-hidden">
+        <div
+          class="absolute -top-20 -right-20 w-64 h-64 bg-brand-50 rounded-full opacity-50 blur-3xl pointer-events-none">
+        </div>
+
+        <div class="flex items-center justify-between mb-6 relative z-10">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800">แนวโน้มสุขภาพ</h2>
+            <div class="flex flex-wrap gap-4 mt-2 text-sm">
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-sys-main"></span> ความดันตัวบน (SYS)
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-dia-main"></span> ความดันตัวล่าง (DIA)
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-pulse-main"></span> ชีพจร (Pulse)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative w-full h-[380px] z-10 chart-container">
+          <canvas id="bpLineChart"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden mb-4">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+            ประวัติการบันทึก
+          </h2>
+          <span id="dash-count"
+            class="text-xs font-bold px-3 py-1.5 bg-brand-50 text-brand-600 rounded-lg border border-brand-100">
+            0 รายการ
+          </span>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-sm text-left">
+            <thead
+              class="text-xs text-slate-400 font-semibold uppercase bg-slate-50/50 sticky top-0 backdrop-blur-sm">
               <tr>
-                <th class="px-2 py-1 text-left">วันที่</th>
-                <th class="px-2 py-1 text-left">เวลา</th>
-                <th class="px-2 py-1 text-center">SYS</th>
-                <th class="px-2 py-1 text-center">DIA</th>
-                <th class="px-2 py-1 text-center">Pulse</th>
+                <th class="px-6 py-4">วันที่</th>
+                <th class="px-6 py-4">ช่วงเวลา</th>
+                <th class="px-6 py-4 text-center text-sys-main">ตัวบน (SYS)</th>
+                <th class="px-6 py-4 text-center text-dia-main">ตัวล่าง (DIA)</th>
+                <th class="px-6 py-4 text-center text-pulse-main">ชีพจร</th>
+                <th class="px-6 py-4 text-center">สถานะ</th>
               </tr>
             </thead>
-            <tbody id="dash-table-body"></tbody>
+            <tbody id="dash-table-body" class="divide-y divide-slate-50"></tbody>
           </table>
         </div>
       </div>
+
     </section>
+
+    <section id="page-profile" class="page"></section>
   </main>
 
-  <!-- BOTTOM NAV -->
-  <nav class="bg-white border-t border-slate-200 px-4 py-2 flex justify-around text-xs text-slate-500">
+  <nav class="bg-white border-t border-slate-200 px-4 py-2 flex justify-around text-xs text-slate-500
+            fixed bottom-0 left-0 right-0 z-50">
     <button data-nav="dashboard" onclick="navigate('dashboard')" class="flex flex-col items-center gap-0.5">
       <span>📊</span><span>Dashboard</span>
     </button>
@@ -182,10 +308,12 @@
     </button>
   </nav>
 
-  <!-- Modules -->
+  <script src="./js/utils.js"></script>
+  <script src="./js/chart.js"></script>
   <script src="./js/dashboard.js"></script>
   <script src="./js/profile.js"></script>
   <script src="./js/app.js"></script>
 
 </body>
+
 </html>
