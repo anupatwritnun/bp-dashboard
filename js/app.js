@@ -2,8 +2,8 @@
 window.AppState = {
   userId: null,
   profile: null,
-  bpRecords: [],     // dashboard.js จะใช้
-  profileStats: null // profile.js จะใช้
+  bpRecords: [],
+  profileStats: null
 };
 
 // ===== Simple SPA Router =====
@@ -28,7 +28,7 @@ function printDashboard() {
   window.print();
 }
 
-// ===== LIFF + App Init =====
+// ===== LIFF + APP INIT =====
 async function initApp() {
   const loader = document.getElementById("global-loader");
   const loaderText = document.getElementById("global-loader-text");
@@ -46,22 +46,17 @@ async function initApp() {
     AppState.userId = profile.userId;
     AppState.profile = profile;
 
-    // แสดงชื่อบน navbar
     document.getElementById("nav-username").textContent = profile.displayName || "ผู้ใช้ LINE";
 
-    // โหลดข้อมูล dashboard
+    // Load dashboard data
     loaderText.textContent = "กำลังโหลดข้อมูล Dashboard...";
-    await loadDashboardData(); // จาก dashboard.js
+    await loadDashboardData(); // must exist in dashboard.js
 
-    // โหลดข้อมูลโปรไฟล์ (LV/EXP/streak/totalLog)
-    loaderText.textContent = "กำลังโหลดข้อมูลโปรไฟล์...";
-    await loadProfileStats(); // จาก profile.js
+    // Render dashboard UI
+    renderDashboard();  
 
-    // Render หน้า
-    renderDashboard();  // dashboard.js
-    renderProfile();    // profile.js
+    // Profile page script runs automatically from profile.js (initProfilePage)
 
-    // default page = profile
     navigate("profile");
 
   } catch (err) {
@@ -72,21 +67,24 @@ async function initApp() {
   }
 }
 
-// สำหรับปุ่มรีเฟรช dashboard
+// Refresh dashboard
 async function refreshDashboard() {
   if (!AppState.userId) return;
+
   const btn = event?.target;
+
   if (btn) {
     btn.disabled = true;
     btn.textContent = "กำลังโหลด...";
   }
+
   await loadDashboardData();
   renderDashboard();
+
   if (btn) {
     btn.disabled = false;
     btn.textContent = "รีเฟรชข้อมูล";
   }
 }
 
-// Start app
 window.addEventListener("load", initApp);
