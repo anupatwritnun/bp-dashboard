@@ -362,14 +362,14 @@ function renderProfile() {
         <div class="bg-white border border-slate-100 rounded-3xl p-6 relative overflow-hidden shadow-lg shadow-orange-100/50 mb-4">
             <div class="flex justify-between items-end mb-3 relative z-10">
                 <div>
-                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">แต้มสุขภาพ (XP)</p>
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">XP เลเวลนี้</p>
                     <div class="flex items-baseline gap-2 mt-1">
-                        <span class="text-3xl font-black text-slate-800 tracking-tight">${currentXP}</span>
-                        <span class="text-slate-400 font-medium text-sm">/ ${nextXP > 900000 ? 'MAX' : nextXP}</span>
+                        <span class="text-3xl font-black text-slate-800 tracking-tight">${level === 10 ? currentXP : (currentXP - prevXP)}</span>
+                        <span class="text-slate-400 font-medium text-sm">/ ${level === 10 ? 'MAX' : (nextXP - prevXP)}</span>
                     </div>
                 </div>
                 <div class="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">
-                    XP
+                    Level ${level}
                 </div>
             </div>
             <div class="h-6 w-full bg-slate-100 rounded-full p-1 shadow-inner">
