@@ -308,15 +308,15 @@ function renderProfile() {
     const nextXP = levelInfo.nextXP;
     const prevXP = levelInfo.minXP;
 
-    // Calculate percentage based on range (so the bar fills up for the current level)
-    // Formula: (Current - Base) / (Goal - Base)
+    // Calculate percentage based on CUMULATIVE range (0 to nextXP)
+    // Formula: (Current / Goal) * 100
+    // This ensures that 71/100 visually looks like 71%, even if Level 2 starts at 50.
+    // Note: This means level transitions will drop the bar from 100% to (PrevXP/NextXP)%.
     let percentCalc = 0;
     if (level === 10) {
         percentCalc = 100; // Max level
     } else {
-        const range = nextXP - prevXP;
-        const progress = currentXP - prevXP;
-        percentCalc = Math.min((progress / range) * 100, 100);
+        percentCalc = Math.min((currentXP / nextXP) * 100, 100);
     }
     const xpPercent = percentCalc;
 
@@ -362,14 +362,14 @@ function renderProfile() {
         <div class="bg-white border border-slate-100 rounded-3xl p-6 relative overflow-hidden shadow-lg shadow-orange-100/50 mb-4">
             <div class="flex justify-between items-end mb-3 relative z-10">
                 <div>
-                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">XP เลเวลนี้</p>
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">แต้มสุขภาพ (XP)</p>
                     <div class="flex items-baseline gap-2 mt-1">
-                        <span class="text-3xl font-black text-slate-800 tracking-tight">${level === 10 ? currentXP : (currentXP - prevXP)}</span>
-                        <span class="text-slate-400 font-medium text-sm">/ ${level === 10 ? 'MAX' : (nextXP - prevXP)}</span>
+                        <span class="text-3xl font-black text-slate-800 tracking-tight">${currentXP}</span>
+                        <span class="text-slate-400 font-medium text-sm">/ ${level === 10 ? 'MAX' : nextXP}</span>
                     </div>
                 </div>
                 <div class="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">
-                    Level ${level}
+                    XP
                 </div>
             </div>
             <div class="h-6 w-full bg-slate-100 rounded-full p-1 shadow-inner">
