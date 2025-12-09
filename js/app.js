@@ -59,6 +59,16 @@ async function initApp() {
     // default page = dashboard
     navigate("dashboard");
 
+    // DEBUG: Auto-open share modal if query param present
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug_share')) {
+      console.log("Debug: Opening share modal...");
+      navigate("profile"); // Switch to profile page so they see it
+      setTimeout(() => {
+        if (window.openShareModal) window.openShareModal();
+      }, 500);
+    }
+
   } catch (err) {
     console.error("initApp error", err);
     alert("โหลดระบบไม่สำเร็จ");

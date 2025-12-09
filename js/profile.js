@@ -418,47 +418,86 @@ function renderProfile() {
                 <h3 class="font-bold text-slate-800">แชร์ความสำเร็จ</h3>
             </div>
 
+            <!-- Share Preivew Area -->
             <div class="p-6 bg-slate-50 flex justify-center">
-                <div id="share-capture-card" class="w-[300px] h-[500px] bg-gradient-to-b from-cyan-50 to-white rounded-[2rem] shadow-xl relative overflow-hidden flex flex-col text-center font-sans">
-                     <div class="absolute top-0 left-0 w-full h-full opacity-40 pointer-events-none">
-                         <div class="absolute top-[-10%] right-[-30%] w-[250px] h-[250px] bg-cyan-200 rounded-full blur-[60px]"></div>
-                         <div class="absolute bottom-[20%] left-[-20%] w-[200px] h-[200px] bg-orange-200 rounded-full blur-[50px]"></div>
-                    </div>
-
-                    <div class="relative z-10 pt-10 px-6">
-                       <div class="flex items-center justify-center gap-2 mb-2">
-                         <div class="bg-orange-500 p-1.5 rounded-lg shadow-sm">
-                            <i data-lucide="heart" class="w-4 h-4 text-white fill-white"></i>
-                         </div>
-                         <span class="font-black text-slate-800 text-xl tracking-tight">ปลา<span class="text-orange-500">ท๊องง</span></span>
-                       </div>
-                       <div class="inline-block bg-white/60 px-3 py-1 rounded-full border border-slate-200/50 text-[10px] text-cyan-800 font-bold uppercase tracking-wider">
-                          บันทึกความดันโลหิต
-                       </div>
-                    </div>
-
-                    <div class="relative z-10 flex-grow flex items-center justify-center -my-4 scale-90">
-                       ${getGoldfishHTML(fishColor.primary, fishColor.secondary, levelInfo.visuals || {})}
-                    </div>
-
-                    <div class="relative z-10 px-6 mb-8">
-                        <div class="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-sm flex justify-between items-center">
-                             <div>
-                                <p class="text-[10px] text-slate-400 font-bold uppercase">Level</p>
-                                <p class="text-3xl font-black text-slate-800 leading-none">${level}</p>
-                             </div>
-                             <div class="h-8 w-px bg-slate-200"></div>
-                             <div class="text-right">
-                                <p class="text-[10px] text-orange-500 font-bold uppercase">ต่อเนื่อง</p>
-                                <p class="text-3xl font-black text-orange-500 leading-none">${streak} <span class="text-sm text-slate-400 font-normal">วัน</span></p>
-                             </div>
+                
+                <!-- NEW DESIGN CARD -->
+                <div id="share-capture-card" class="w-[340px] bg-slate-50 p-4 flex flex-col gap-4 shadow-xl font-sans relative overflow-hidden text-slate-800" style="font-family: 'Kanit', sans-serif;">
+                    
+                    <!-- Header: Decorative Text -->
+                    <div class="w-full text-center -mb-1 mt-1">
+                         <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/50 border border-white/60 shadow-sm backdrop-blur-sm">
+                            <span class="text-lg">✨</span>
+                            <h2 class="text-lg font-semibold text-slate-700 tracking-wide font-['Kanit']">
+                                มาจดความดันกันเถอะ
+                            </h2>
+                            <span class="text-lg">✨</span>
                         </div>
                     </div>
 
-                    <div class="relative z-10 bg-slate-900 text-white p-6 mt-auto">
-                        <p class="font-black text-lg text-orange-400 tracking-wide">"มาจดความดันด้วยกันสิ"</p>
+                    <!-- 1. Hero Section: Fish Photo (Blue BG) -->
+                    <div class="w-full aspect-[16/9] bg-gradient-to-b from-sky-100 to-sky-200 rounded-2xl relative flex items-center justify-center overflow-visible shadow-sm border border-sky-100">
+                        <div class="scale-90 transform transition-transform">
+                             ${getGoldfishHTML(fishColor.primary, fishColor.secondary, levelInfo.visuals || {})}
+                        </div>
                     </div>
+
+                    <!-- 2. User Info & Level Row -->
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-slate-100 overflow-hidden border border-slate-100 relative">
+                                <img src="${profile.pictureUrl}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="text-left">
+                                <p class="text-base font-bold text-slate-800 font-['Kanit'] leading-tight">${profile.displayName}</p>
+                                <p class="text-xs text-slate-500 font-medium font-['Kanit']">${levelInfo.name || 'ผู้พิทักษ์ความดัน'}</p>
+                            </div>
+                        </div>
+                        <div class="text-right flex flex-col items-end">
+                             <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">LEVEL</span>
+                             <span class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-700 to-slate-900 leading-none">${level}</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Stats Rows (No XP Bar) -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Streak -->
+                        <div class="bg-white border border-slate-100 p-3 rounded-2xl flex flex-col justify-between h-24 relative overflow-hidden shadow-sm">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-sm">🔥</div>
+                                <span class="text-xs text-slate-500 font-bold">ต่อเนื่อง</span>
+                            </div>
+                            <div>
+                                 <p class="text-3xl font-black text-slate-800 font-['Kanit']">${streak}<span class="text-xs font-medium text-slate-400 ml-1">วัน</span></p>
+                            </div>
+                        </div>
+                        <!-- Total Recorded -->
+                        <div class="bg-white border border-slate-100 p-3 rounded-2xl flex flex-col justify-between h-24 relative overflow-hidden shadow-sm">
+                            <div class="flex items-center gap-2 mb-1">
+                                 <div class="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center text-sm">📖</div>
+                                <span class="text-xs text-slate-500 font-bold">บันทึกแล้ว</span>
+                            </div>
+                            <div>
+                                 <p class="text-3xl font-black text-slate-800 font-['Kanit']">${totalLogs}<span class="text-xs font-medium text-slate-400 ml-1">วัน</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Footer: Brand & Logo -->
+                    <div class="flex items-center justify-between mt-2 px-2 pb-1">
+                        <div class="flex flex-col">
+                             <p class="text-2xl font-black tracking-tighter leading-none">
+                                <span class="text-slate-800">ปลา</span><span class="text-orange-500">ท๊องง</span>
+                            </p>
+                             <p class="text-[9px] text-slate-400 font-medium tracking-wide">สุขภาพดีเริ่มที่ตัวเรา</p>
+                        </div>
+                        <div>
+                            <img src="logo.jpg" alt="Logo" class="w-10 h-10 object-contain filter-none opacity-90" onerror="this.style.display='none'">
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
 
             <div class="p-4 border-t border-slate-100">
@@ -467,8 +506,7 @@ function renderProfile() {
                 </button>
             </div>
         </div>
-    </div>
-    `;
+    </div>`;
 
     // 4. Initialize Icons
     if (window.lucide) {
