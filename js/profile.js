@@ -548,10 +548,22 @@ window.generateAndShare = function () {
     btn.disabled = true;
 
     html2canvas(card, {
-        scale: 2,
+        scale: 3, // Increased resolution
         backgroundColor: null,
         logging: false,
-        useCORS: true
+        useCORS: true,
+        onclone: (clonedDoc) => {
+            // FIX: html2canvas fails with background-clip: text (shows as empty/censored).
+            // We force a solid color for the capture to ensure visibility.
+            const gradientTexts = clonedDoc.querySelectorAll('.text-transparent');
+            gradientTexts.forEach(el => {
+                el.classList.remove('text-transparent', 'bg-clip-text', 'bg-gradient-to-br', 'bg-gradient-to-r');
+                el.style.background = 'none';
+                el.style.webkitBackgroundClip = 'none';
+                el.style.color = '#334155'; // Fallback to slate-700
+                el.style.textShadow = 'none';
+            });
+        }
     }).then(async (canvas) => {
 
         // 1. Prepare Image
