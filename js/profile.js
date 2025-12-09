@@ -291,9 +291,6 @@ function renderProfile() {
     const streak = stats.current_streak || 0;
     const totalLogs = stats.total_log_days || 0;
 
-    // Dynamic Fish Colors based on Level
-    const fishColor = levelInfo.colors || { primary: "#fbbf24", secondary: "#ea580c" };
-
     // Find current level based on XP table
     let levelInfo = xpLevels[0];
     for (let i = 0; i < xpLevels.length; i++) {
@@ -303,6 +300,9 @@ function renderProfile() {
             break;
         }
     }
+
+    // Dynamic Fish Colors based on Level
+    const fishColor = levelInfo.colors || { primary: "#fbbf24", secondary: "#ea580c" };
 
     const level = levelInfo.level;
     const nextXP = levelInfo.nextXP;
