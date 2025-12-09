@@ -70,16 +70,81 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* --- Animations for Goldfish Profile --- */
-    @keyframes float { 0%, 100% { transform: translateY(0); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
-    @keyframes swim { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(2deg); } }
-    @keyframes wag { 0%, 100% { transform: rotate(15deg); } 50% { transform: rotate(-15deg); } }
-    @keyframes paddle { 0%, 100% { transform: rotate(0deg) scaleX(1); } 50% { transform: rotate(-10deg) scaleX(0.8); } }
-    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+        opacity: 0;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(-60px);
+        opacity: 0;
+      }
+    }
+
+    @keyframes swim {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-10px) rotate(2deg);
+      }
+    }
+
+    @keyframes wag {
+
+      0%,
+      100% {
+        transform: rotate(15deg);
+      }
+
+      50% {
+        transform: rotate(-15deg);
+      }
+    }
+
+    @keyframes paddle {
+
+      0%,
+      100% {
+        transform: rotate(0deg) scaleX(1);
+      }
+
+      50% {
+        transform: rotate(-10deg) scaleX(0.8);
+      }
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
+    }
 
     /* --- Global Loader --- */
     .loader-overlay {
@@ -167,8 +232,7 @@
             <p class="text-[11px] text-slate-400" id="nav-username">กำลังโหลดโปรไฟล์...</p>
           </div>
         </div>
-        <button
-          onclick="printDashboard()"
+        <button onclick="printDashboard()"
           class="no-print hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-600 hover:text-brand-600 hover:border-brand-200 hover:bg-brand-50 transition-all shadow-sm">
           🖨 พิมพ์รายงาน
         </button>
@@ -277,8 +341,7 @@
         </div>
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-sm text-left">
-            <thead
-              class="text-xs text-slate-400 font-semibold uppercase bg-slate-50/50 sticky top-0 backdrop-blur-sm">
+            <thead class="text-xs text-slate-400 font-semibold uppercase bg-slate-50/50 sticky top-0 backdrop-blur-sm">
               <tr>
                 <th class="px-6 py-4">วันที่</th>
                 <th class="px-6 py-4">ช่วงเวลา</th>
@@ -301,15 +364,16 @@
   <nav class="bg-white border-t border-slate-200 px-4 py-2 flex justify-around text-xs text-slate-500
             fixed bottom-0 left-0 right-0 z-50">
     <button data-nav="dashboard" onclick="navigate('dashboard')" class="flex flex-col items-center gap-0.5">
-      <span>📊</span><span>Dashboard</span>
+      <span>📊</span><span>ภาพรวมความดัน</span>
     </button>
     <button data-nav="profile" onclick="navigate('profile')" class="flex flex-col items-center gap-0.5">
-      <span>👤</span><span>Profile</span>
+      <span>👤</span><span>สมุดประจำตัว</span>
     </button>
   </nav>
 
   <script src="./js/utils.js"></script>
   <script src="./js/chart.js"></script>
+  <script src="./js/level-data.js"></script>
   <script src="./js/dashboard.js"></script>
   <script src="./js/profile.js"></script>
   <script src="./js/app.js"></script>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goldfish Gallery Debug</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #fdfbf7;
+        }
+
+        /* Copied Animations from index.html */
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-60px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes swim {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-10px) rotate(2deg);
+            }
+        }
+
+        @keyframes wag {
+
+            0%,
+            100% {
+                transform: rotate(15deg);
+            }
+
+            50% {
+                transform: rotate(-15deg);
+            }
+        }
+
+        @keyframes paddle {
+
+            0%,
+            100% {
+                transform: rotate(0deg) scaleX(1);
+            }
+
+            50% {
+                transform: rotate(-10deg) scaleX(0.8);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+    </style>
+</head>
+
+<body class="p-8">
+    <h1 class="text-3xl font-bold text-center text-slate-800 mb-8">Goldfish Evolution Gallery</h1>
+
+    <div id="gallery-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <!-- Fish will be injected here -->
+    </div>
+
+    <!-- Load Dependencies -->
+    <script src="./js/level-data.js"></script>
+    <!-- We need profile.js for getGoldfishHTML but we don't want it to error on missing dependencies -->
+    <!-- We will mock AppState to prevent errors if profile.js references it at top level (it doesn't, mainly inside functions) -->
+    <script>
+        window.AppState = {};
+        window.liff = { init: () => { }, isLoggedIn: () => false };
+    </script>
+    <script src="./js/profile.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('gallery-grid');
+
+            window.xpLevels.forEach(level => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-[2rem] p-6 shadow-md border border-slate-100 flex flex-col items-center relative overflow-hidden";
+
+                // Use the helper from profile.js
+                // getGoldfishHTML(primary, secondary, visuals)
+                const html = window.getGoldfishHTML(
+                    level.colors.primary,
+                    level.colors.secondary,
+                    level.visuals
+                );
+
+                card.innerHTML = `
+                    <div class="absolute top-4 left-6 text-xl font-black text-slate-200">LV.${level.level}</div>
+                    <div class="z-10 w-full flex justify-center py-4 scale-75 origin-center">
+                        ${html}
+                    </div>
+                    <div class="z-10 text-center mt-2">
+                        <h3 class="text-lg font-bold text-slate-700">${level.name}</h3>
+                        <p class="text-xs text-slate-400 mt-1 px-4">${level.description}</p>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        });
+    </script>
+</body>
+
+</html>
