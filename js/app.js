@@ -56,8 +56,8 @@ async function initApp() {
     renderDashboard();           // dashboard.js
     renderProfile();             // profile.js
 
-    // default page = profile
-    navigate("profile");
+    // default page = dashboard
+    navigate("dashboard");
 
   } catch (err) {
     console.error("initApp error", err);
