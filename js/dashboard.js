@@ -118,9 +118,9 @@ function setupDashboardFilters() {
     });
   });
 
-  // default = all time
-  const defaultBtn = document.querySelector('.quick-filter-btn[data-filter="all-time"]');
-  if (defaultBtn) applyQuickFilter("all-time", defaultBtn);
+  // default = this month
+  const defaultBtn = document.querySelector('.quick-filter-btn[data-filter="this-month"]');
+  if (defaultBtn) applyQuickFilter("this-month", defaultBtn);
 }
 
 // Triggered on filter change
@@ -317,7 +317,7 @@ window.renderTable = function () {
       : { text: "-", color: "bg-slate-100 text-slate-400" };
 
     const timeIcon = r.time?.includes("เช้า") ? "🌞" :
-                     r.time?.includes("เย็น") ? "🌙" : "";
+      r.time?.includes("เย็น") ? "🌙" : "";
 
     const dateLabel = window.formatDateThai
       ? window.formatDateThai(r.date)

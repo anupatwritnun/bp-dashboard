@@ -1,173 +1,74 @@
 // ===============================
-// dashboard.js
-// Handles fetching + filtering +
-// dashboard UI rendering
+// UTILS & HELPERS
 // ===============================
 
-// Called by app.js
-window.loadDashboardData = async function () {
-    const userId = window.AppState.userId;
-    if (!userId) {
-        console.error("❌ No userId found");
-        return;
-    }
+// Helper to format date
+window.formatDateThai = function (dateStr) {
+    const d = new Date(dateStr);
+    const months = [
+        "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+        "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+    ];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+};
 
-    console.log("Fetching data for:", userId);
+/**
+ * Evaluate Blood Pressure Status
+ * Returns { text, color }
+ */
+window.evaluateBPStatus = function (sys, dia) {
+    const s = Number(sys);
+    const d = Number(dia);
 
-    try {
-        const res = await fetch(
-            "https://n8n.srv1159869.hstgr.cloud/webhook/bp-dashboard",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId })
-            }
-        );
-
-        const text = await res.text();
-        console.log("RAW RESPONSE FROM N8N:", text);
-
-        if (!text || text.trim() === "") {
-            console.error("Server returned EMPTY BODY.");
-            throw new Error("Empty response from server");
+    // 1. Crisis (อันตราย)
+    // เงื่อนไข: ตัวบน > 180 หรือ ตัวล่าง > 120
+    if (s > 180 || d > 120) {
+        if (s > 180 && d > 120) {
+            return { text: "อันตราย", color: "bg-red-500 text-white" };
         }
-
-        const json = JSON.parse(text);
-
-        // MUST match structure from n8n
-        window.AppState.profileStats = json.profile;
-        window.AppState.bpRecords = json.records || [];
-
-        console.log("Parsed profileStats:", AppState.profileStats);
-        console.log("Parsed bpRecords count:", AppState.bpRecords.length);
-
-        // initialize filtered with full set
-        window.AppState.filteredBpRecords = [...window.AppState.bpRecords];
-
-    } catch (err) {
-        console.error("loadDashboardData error:", err);
-        throw err;
-    }
-};
-
-// ===============================
-// RENDER DASHBOARD MAIN
-// ===============================
-
-window.renderDashboard = function () {
-    const recs = window.AppState.bpRecords || [];
-    const filtered = window.AppState.filteredBpRecords || [];
-
-    // Average cards
-    if (typeof renderAverages === "function") {
-        renderAverages();
+        if (s > 180) {
+            return { text: "ความดันตัวบนอยู่ในเกณฑ์อันตราย", color: "bg-red-500 text-white" }; // Long text, maybe truncate in UI if needed?
+        }
+        return { text: "ความดันตัวล่างอยู่ในเกณฑ์อันตราย", color: "bg-red-500 text-white" };
     }
 
-    // Chart (from chart.js)
-    if (typeof renderChart === "function") {
-        renderChart();
+    // 2. Stage 2 (สูงมาก)
+    // เงื่อนไข: ตัวบน ≥ 140 หรือ ตัวล่าง ≥ 90
+    if (s >= 140 || d >= 90) {
+        if (s >= 140 && d >= 90) {
+            return { text: "สูงมาก", color: "bg-orange-500 text-white" };
+        }
+        if (s >= 140) {
+            return { text: "ความดันตัวบนสูงมาก", color: "bg-orange-500 text-white" };
+        }
+        return { text: "ความดันตัวล่างสูงมาก", color: "bg-orange-500 text-white" };
     }
 
-    // Table
-    if (typeof renderTable === "function") {
-        renderTable();
-    }
-};
-
-// ===============================
-// FILTER HELPERS
-// ===============================
-
-// Triggered on filter change
-window.updateDashboardFilter = function () {
-    const recs = window.AppState.bpRecords || [];
-    const start = document.getElementById("dash-start").value;
-    const end = document.getElementById("dash-end").value;
-
-    const s = start ? new Date(start) : new Date("2000-01-01");
-    const e = end ? new Date(end + "T23:59") : new Date();
-
-    window.AppState.filteredBpRecords = recs.filter(r => {
-        const d = new Date(r.date);
-        return d >= s && d <= e;
-    });
-
-    window.renderDashboard();
-};
-
-// ===============================
-// AVERAGES CARD (SYS/DIA/PULSE)
-// ===============================
-window.renderAverages = function () {
-    const recs = window.AppState.filteredBpRecords || [];
-    const C = document.getElementById("dash-stats");
-
-    if (!recs.length) {
-        C.innerHTML = `
-            <div class="text-center text-slate-400 p-6">
-                ไม่พบข้อมูลในช่วงนี้
-            </div>
-        `;
-        return;
+    // 3. Stage 1 (สูง)
+    // เงื่อนไข: ตัวบน 130–139 หรือ ตัวล่าง 80–89
+    // (Note: Since we filtered out >=140/>=90 above, we just check >=130 or >=80 here)
+    if (s >= 130 || d >= 80) {
+        if (s >= 130 && d >= 80) {
+            return { text: "สูง", color: "bg-yellow-400 text-slate-800" };
+        }
+        if (s >= 130) {
+            return { text: "ความดันตัวบนสูง", color: "bg-yellow-400 text-slate-800" };
+        }
+        return { text: "ความดันตัวล่างสูง", color: "bg-yellow-400 text-slate-800" };
     }
 
-    const avg = (key) => {
-        const vals = recs.map(r => Number(r[key])).filter(x => x > 0 && !isNaN(x));
-        if (!vals.length) return "-";
-        return Math.round(vals.reduce((a,b) => a+b, 0) / vals.length);
-    };
-
-    C.innerHTML = `
-        <div class="bg-white p-4 rounded-2xl shadow border">
-            <h3 class="text-sm font-bold text-slate-600">SYS</h3>
-            <p class="text-2xl font-bold text-pink-500">${avg("systolic")}</p>
-        </div>
-
-        <div class="bg-white p-4 rounded-2xl shadow border">
-            <h3 class="text-sm font-bold text-slate-600">DIA</h3>
-            <p class="text-2xl font-bold text-blue-500">${avg("diastolic")}</p>
-        </div>
-
-        <div class="bg-white p-4 rounded-2xl shadow border">
-            <h3 class="text-sm font-bold text-slate-600">Pulse</h3>
-            <p class="text-2xl font-bold text-amber-700">${avg("pulse")}</p>
-        </div>
-    `;
-};
-
-// ===============================
-// TABLE RENDER
-// ===============================
-window.renderTable = function () {
-    const recs = window.AppState.filteredBpRecords || [];
-    const body = document.getElementById("dash-table-body");
-
-    document.getElementById("dash-count").textContent = `${recs.length} รายการ`;
-
-    if (!recs.length) {
-        body.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center text-slate-400 py-4">
-                    ไม่พบข้อมูล
-                </td>
-            </tr>
-        `;
-        return;
+    // 4. Elevated (เริ่มเสี่ยง)
+    // เงื่อนไข: ตัวบน 120–129 และ ตัวล่าง < 80
+    if (s >= 120 && d < 80) {
+        return { text: "เริ่มเสี่ยง", color: "bg-yellow-200 text-yellow-800" };
     }
 
-    const sorted = [...recs].sort((a, b) => {
-        const d1 = new Date(a.date);
-        const d2 = new Date(b.date);
-        return d2 - d1;
-    });
+    // 5. Normal (ปกติ)
+    // เงื่อนไข: ตัวบน < 120 และ ตัวล่าง < 80
+    if (s < 120 && d < 80) {
+        return { text: "ปกติฮะ", color: "bg-green-100 text-green-700" };
+    }
 
-    body.innerHTML = sorted.map(r => `
-        <tr>
-            <td class="px-2 py-1">${r.date}</td>
-            <td class="px-2 py-1">${r.time}</td>
-            <td class="px-2 py-1 text-center">${r.systolic}</td>
-            <td class="px-2 py-1 text-center">${r.diastolic}</td>
-            <td class="px-2 py-1 text-center">${r.pulse ?? "-"}</td>
-        </tr>
-    `).join("");
+    // Fallback?
+    return { text: "-", color: "bg-slate-100 text-slate-400" };
 };
