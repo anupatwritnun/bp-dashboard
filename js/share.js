@@ -5,7 +5,7 @@
 
 // API Endpoints
 const SHARE_GENERATE_URL = "https://n8n.srv1159869.hstgr.cloud/webhook/bp-share-generate";
-const SHARE_VALIDATE_URL = "https://n8n.srv1159869.hstgr.cloud/webhook/bp-share-validate";
+const SHARE_VALIDATE_URL = "https://n8n.srv1159869.hstgr.cloud/webhook/bpvalidate";
 
 // QR Code instance
 let qrCodeInstance = null;
