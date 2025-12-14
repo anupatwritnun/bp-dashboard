@@ -3,7 +3,8 @@ window.AppState = {
   userId: null,
   profile: null,        // LINE profile (displayName, pictureUrl)
   bpRecords: [],        // from n8n -> records[]
-  profileStats: null    // from n8n -> profile{}
+  profileStats: null,   // from n8n -> profile{}
+  isSharedView: false   // true when viewing via shared link
 };
 
 // ===== Simple SPA Router =====
@@ -33,6 +34,62 @@ async function initApp() {
   const loaderText = document.getElementById("global-loader-text");
 
   try {
+    // ===== CHECK FOR SHARED VIEW MODE FIRST =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareToken = urlParams.get('token');
+
+    if (shareToken) {
+      console.log("Detected share token, entering shared view mode...");
+      loaderText.textContent = "กำลังตรวจสอบลิงก์แชร์...";
+
+      // Validate token via n8n
+      const validation = await window.checkSharedViewMode();
+
+      if (validation.isShared && validation.userId) {
+        // Valid token - load shared user's data
+        AppState.userId = validation.userId;
+        AppState.isSharedView = true;
+
+        // Hide share button in shared view
+        const shareBtn = document.querySelector('[onclick="openDashboardShareModal()"]');
+        if (shareBtn) shareBtn.style.display = 'none';
+
+        // Update nav to show shared mode
+        document.getElementById("nav-username").textContent = "กำลังดู Dashboard ที่แชร์";
+
+        // Load the shared user's data
+        loaderText.textContent = "กำลังโหลดข้อมูลที่แชร์...";
+        await loadDashboardData();
+
+        // Render dashboard only (no profile in shared view)
+        renderDashboard();
+
+        // Show shared view banner
+        if (window.renderSharedViewBanner) {
+          window.renderSharedViewBanner(validation.expiresAt);
+        }
+
+        // Navigate to dashboard
+        navigate("dashboard");
+
+        // Hide profile tab in shared view
+        const profileTab = document.querySelector('[data-nav="profile"]');
+        if (profileTab) profileTab.style.display = 'none';
+
+        loader.style.display = "none";
+        return; // Exit early, don't need LIFF login
+
+      } else {
+        // Invalid or expired token
+        loader.style.display = "none";
+        if (window.renderShareError) {
+          window.renderShareError(validation.error || 'Invalid token');
+        }
+        return;
+      }
+    }
+
+    // ===== NORMAL LIFF FLOW (No share token) =====
     loaderText.textContent = "กำลังเชื่อมต่อ LINE...";
     await liff.init({ liffId: "2008652706-EZVkykgG" });
 
@@ -60,7 +117,6 @@ async function initApp() {
     navigate("dashboard");
 
     // DEBUG: Auto-open share modal if query param present
-    const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('debug_share')) {
       console.log("Debug: Opening share modal...");
       navigate("profile"); // Switch to profile page so they see it
