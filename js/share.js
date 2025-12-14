@@ -125,24 +125,40 @@ function formatExpiryTime(expiresAt) {
 }
 
 // ===== Open Dashboard Share Modal =====
-window.openDashboardShareModal = async function () {
+window.openDashboardShareModal = function () {
     const modal = document.getElementById('dashboard-share-modal');
-    const linkInput = document.getElementById('share-link-input');
-    const expiryText = document.getElementById('share-expiry-text');
+    const warningState = document.getElementById('share-warning-state');
     const loadingState = document.getElementById('share-loading-state');
     const contentState = document.getElementById('share-content-state');
     const errorState = document.getElementById('share-error-state');
 
     if (!modal) return;
 
-    // Show modal
+    // Show modal with warning state
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 
-    // Show loading state
-    if (loadingState) loadingState.classList.remove('hidden');
+    // Reset to warning state
+    if (warningState) warningState.classList.remove('hidden');
+    if (loadingState) loadingState.classList.add('hidden');
     if (contentState) contentState.classList.add('hidden');
     if (errorState) errorState.classList.add('hidden');
+
+    if (window.lucide) window.lucide.createIcons();
+};
+
+// ===== Confirm and Generate Share Link =====
+window.confirmAndGenerateShareLink = async function () {
+    const warningState = document.getElementById('share-warning-state');
+    const loadingState = document.getElementById('share-loading-state');
+    const contentState = document.getElementById('share-content-state');
+    const errorState = document.getElementById('share-error-state');
+    const linkInput = document.getElementById('share-link-input');
+    const expiryText = document.getElementById('share-expiry-text');
+
+    // Hide warning, show loading
+    if (warningState) warningState.classList.add('hidden');
+    if (loadingState) loadingState.classList.remove('hidden');
 
     // Generate token
     const result = await generateShareToken();

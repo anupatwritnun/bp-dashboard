@@ -386,8 +386,50 @@
             </button>
           </div>
 
+          <!-- Warning State (Initial) -->
+          <div id="share-warning-state" class="p-6">
+            <div class="text-center mb-5">
+              <div class="text-6xl mb-3">🐠</div>
+              <h3 class="text-lg font-bold text-slate-800 mb-1">กำลังจะแชร์ข้อมูลสุขภาพ</h3>
+              <p class="text-sm text-slate-500">โปรดอ่านคำเตือนก่อนดำเนินการ</p>
+            </div>
+
+            <div class="space-y-3 mb-6">
+              <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                <div class="flex gap-3">
+                  <span class="text-xl">🔒</span>
+                  <div>
+                    <p class="text-sm font-bold text-orange-700">แชร์เฉพาะคนที่ไว้ใจ</p>
+                    <p class="text-xs text-orange-600">ลิงก์นี้จะแสดงข้อมูลความดันโลหิตทั้งหมดของคุณ</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div class="flex gap-3">
+                  <span class="text-xl">⏰</span>
+                  <div>
+                    <p class="text-sm font-bold text-amber-700">ลิงก์มีอายุ 6 ชั่วโมง</p>
+                    <p class="text-xs text-amber-600">หลังหมดอายุ ลิงก์จะใช้งานไม่ได้อีก</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3">
+              <button onclick="closeDashboardShareModal()"
+                class="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-all">
+                ยกเลิก
+              </button>
+              <button onclick="confirmAndGenerateShareLink()"
+                class="flex-1 px-4 py-3 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2">
+                🐟 สร้างลิงก์แชร์
+              </button>
+            </div>
+          </div>
+
           <!-- Loading State -->
-          <div id="share-loading-state" class="p-8 text-center">
+          <div id="share-loading-state" class="hidden p-8 text-center">
             <div class="loader mx-auto mb-4"></div>
             <p class="text-slate-500 text-sm">กำลังสร้างลิงก์แชร์...</p>
           </div>
