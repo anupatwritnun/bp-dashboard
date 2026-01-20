@@ -407,14 +407,13 @@ function renderHealthSummary() {
           </div>
 
           ${sortedRisks.length > 0 ? sortedRisks.map(([risk, count]) => {
-    const percentage = Math.min((count / stats.totalRecords) * 100, 100);
-    const severity = percentage > 50 ? 'สูง' : percentage > 25 ? 'ปานกลาง' : `${count} ครั้ง`;
-    const severityColor = percentage > 50 ? 'text-red-500 font-bold' : 'text-gray-500';
+    const percentage = Math.min((count / stats.daysInRange) * 100, 100);
+    const severityLabel = percentage > 50 ? 'สูง' : percentage > 25 ? 'ปานกลาง' : 'ต่ำ';
     return `
               <div class="mb-4 last:mb-0">
                 <div class="flex justify-between text-xs font-medium mb-1.5">
                   <span class="text-gray-600">${RISK_LABELS[risk] || risk}</span>
-                  <span class="${severityColor}">${severity}</span>
+                  <span class="text-gray-500">${severityLabel}</span>
                 </div>
                 <div class="w-full bg-white rounded-full h-2">
                   <div class="bg-red-400 h-2 rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
