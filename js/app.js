@@ -27,6 +27,11 @@ function navigate(page) {
   if (page === 'calendar' && window.initCalendar) {
     window.initCalendar();
   }
+
+  // Initialize health summary when navigating to it
+  if (page === 'health-summary' && window.initHealthSummary) {
+    window.initHealthSummary();
+  }
 }
 
 function printDashboard() {
@@ -77,11 +82,13 @@ async function initApp() {
         // Navigate to dashboard
         navigate("dashboard");
 
-        // Hide profile and calendar tabs in shared view
+        // Hide profile, calendar, and health summary tabs in shared view
         const profileTab = document.querySelector('[data-nav="profile"]');
         if (profileTab) profileTab.style.display = 'none';
         const calendarTab = document.querySelector('[data-nav="calendar"]');
         if (calendarTab) calendarTab.style.display = 'none';
+        const healthSummaryTab = document.querySelector('[data-nav="health-summary"]');
+        if (healthSummaryTab) healthSummaryTab.style.display = 'none';
 
         loader.style.display = "none";
         return; // Exit early, don't need LIFF login

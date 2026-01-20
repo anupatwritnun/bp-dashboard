@@ -9,8 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
     rel="stylesheet">
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -20,6 +23,8 @@
         extend: {
           fontFamily: {
             sans: ['Prompt', 'system-ui', 'sans-serif'],
+            kanit: ['Kanit', 'sans-serif'],
+            poppins: ['Poppins', 'sans-serif'],
           },
           colors: {
             brand: {
@@ -303,6 +308,60 @@
       border-radius: 2rem;
       padding: 1.5rem;
       overflow: hidden;
+    }
+
+    /* ===== Health Summary Styles ===== */
+    .health-summary-card {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .font-kanit {
+      font-family: 'Kanit', sans-serif;
+    }
+
+    .font-poppins {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* Soft Shadow */
+    .shadow-soft {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Timeline Item Animation */
+    .timeline-item {
+      animation: slideInTimeline 0.4s ease-out forwards;
+      opacity: 0;
+    }
+
+    @keyframes slideInTimeline {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Hide Scrollbar */
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Health Summary Page */
+    #page-health-summary {
+      position: relative;
+      min-height: calc(100vh - 180px);
     }
   </style>
 </head>
@@ -605,21 +664,35 @@
         </div>
       </div>
     </section>
+
+    <!-- Health Summary Page -->
+    <section id="page-health-summary" class="page hide-scrollbar">
+      <div id="health-summary-container">
+        <!-- Loading placeholder -->
+        <div class="flex items-center justify-center py-20">
+          <div class="loader"></div>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <nav class="bg-white border-t border-slate-200 px-4 py-2 flex justify-around text-xs text-slate-500
-            fixed bottom-0 left-0 right-0 z-50">
+  <nav class="bg-white border-t border-slate-200 px-2 py-2 flex justify-around text-[10px] text-slate-500
+            fixed bottom-0 left-0 right-0 z-50 no-print">
     <button data-nav="dashboard" onclick="navigate('dashboard')"
-      class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all">
-      <span>📊</span><span>ภาพรวม</span>
+      class="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all min-w-0">
+      <span class="text-base">📊</span><span>ภาพรวม</span>
+    </button>
+    <button data-nav="health-summary" onclick="navigate('health-summary')"
+      class="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all min-w-0">
+      <span class="text-base">📈</span><span>สรุปสุขภาพ</span>
     </button>
     <button data-nav="calendar" onclick="navigate('calendar')"
-      class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all">
-      <span>📅</span><span>ปฏิทิน</span>
+      class="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all min-w-0">
+      <span class="text-base">📅</span><span>ปฏิทิน</span>
     </button>
     <button data-nav="profile" onclick="navigate('profile')"
-      class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all">
-      <span>👤</span><span>สมุดประจำตัว</span>
+      class="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all min-w-0">
+      <span class="text-base">👤</span><span>สมุดประจำตัว</span>
     </button>
   </nav>
 
@@ -629,6 +702,7 @@
   <script src="./js/dashboard.js"></script>
   <script src="./js/profile.js"></script>
   <script src="./js/calendar.js"></script>
+  <script src="./js/health-summary.js"></script>
   <script src="./js/share.js"></script>
   <script src="./js/app.js"></script>
 
