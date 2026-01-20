@@ -4,7 +4,12 @@ window.AppState = {
   profile: null,        // LINE profile (displayName, pictureUrl)
   bpRecords: [],        // from n8n -> records[]
   profileStats: null,   // from n8n -> profile{}
-  isSharedView: false   // true when viewing via shared link
+  isSharedView: false,  // true when viewing via shared link
+  // Additional data from webhook
+  goodHabits: [],       // from n8n -> good_habits[]
+  badHabits: [],        // from n8n -> bad_habits[]
+  symptomLogs: [],      // from n8n -> symptom_logs[]
+  weightLogs: []        // from n8n -> weight_logs[]
 };
 
 // ===== Simple SPA Router =====

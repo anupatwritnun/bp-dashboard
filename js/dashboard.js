@@ -35,7 +35,10 @@ window.loadDashboardData = async function () {
     const json = JSON.parse(text);
     const root = Array.isArray(json) ? json[0] : json;
 
+    // Store profile stats
     window.AppState.profileStats = root.profile || {};
+
+    // Store BP records
     window.AppState.bpRecords = (root.records || []).map(r => ({
       date: r.date,
       time: r.time || r.period || "-",
@@ -44,8 +47,18 @@ window.loadDashboardData = async function () {
       pulse: r.pulse != null ? Number(r.pulse) : null
     }));
 
+    // Store additional data arrays from webhook
+    window.AppState.goodHabits = root.good_habits || [];
+    window.AppState.badHabits = root.bad_habits || [];
+    window.AppState.symptomLogs = root.symptom_logs || [];
+    window.AppState.weightLogs = root.weight_logs || [];
+
     console.log("Parsed profileStats:", window.AppState.profileStats);
     console.log("Parsed bpRecords count:", window.AppState.bpRecords.length);
+    console.log("Parsed goodHabits count:", window.AppState.goodHabits.length);
+    console.log("Parsed badHabits count:", window.AppState.badHabits.length);
+    console.log("Parsed symptomLogs count:", window.AppState.symptomLogs.length);
+    console.log("Parsed weightLogs count:", window.AppState.weightLogs.length);
 
     // default filtered = all
     window.AppState.filteredBpRecords = [...window.AppState.bpRecords];

@@ -62,30 +62,117 @@ function getStatusConfig(status) {
 function buildHealthDataFromRecords() {
   const healthData = {};
 
-  if (AppState.bpRecords && AppState.bpRecords.length > 0) {
-    AppState.bpRecords.forEach(record => {
+  // Get data from AppState
+  const records = AppState.bpRecords || [];
+  const goodHabits = AppState.goodHabits || [];
+  const badHabits = AppState.badHabits || [];
+  const symptomLogs = AppState.symptomLogs || [];
+  const weightLogs = AppState.weightLogs || [];
+
+  // Map Thai time to English
+  const timeMap = {
+    'เช้า': 'morning',
+    'บ่าย': 'afternoon',
+    'เย็น': 'evening',
+    'ดึก': 'night'
+  };
+
+  // Build lookup maps for habits/symptoms by date
+  const goodHabitsByDate = {};
+  goodHabits.forEach(h => {
+    if (!goodHabitsByDate[h.date]) goodHabitsByDate[h.date] = [];
+    goodHabitsByDate[h.date].push(h);
+  });
+
+  const badHabitsByDate = {};
+  badHabits.forEach(h => {
+    if (!badHabitsByDate[h.date]) badHabitsByDate[h.date] = [];
+    badHabitsByDate[h.date].push(h);
+  });
+
+  const symptomsByDate = {};
+  symptomLogs.forEach(s => {
+    if (!symptomsByDate[s.date]) symptomsByDate[s.date] = [];
+    symptomsByDate[s.date].push(s);
+  });
+
+  const weightByDate = {};
+  weightLogs.forEach(w => {
+    weightByDate[w.date] = w;
+  });
+
+  // Process BP records
+  if (records.length > 0) {
+    records.forEach(record => {
       const dateKey = record.date; // Format: YYYY-MM-DD
 
-      // Get BP values
-      const sys = parseInt(record.sys) || 120;
-      const dia = parseInt(record.dia) || 80;
-      const pulse = parseInt(record.pulse) || 72;
+      // Get BP values (handle both field naming conventions)
+      const sys = parseInt(record.systolic || record.sys) || 120;
+      const dia = parseInt(record.diastolic || record.dia) || 80;
+      const pulse = record.pulse ? parseInt(record.pulse) : null;
+
+      // Map Thai time to internal format
+      const timeValue = timeMap[record.time] || record.time || 'morning';
 
       // Classify status
       const status = classifyBP(sys, dia);
 
-      // Build data entry
-      healthData[dateKey] = {
-        bp: `${sys}/${dia}`,
-        sys: sys,
-        dia: dia,
-        pulse: pulse,
-        status: status,
-        time: record.time || 'morning',
-        risks: record.risk_factors || [],
-        habits: record.positive_habits || [],
-        symptoms: record.symptoms || []
-      };
+      // Get good habits for this date
+      const dateGoodHabits = goodHabitsByDate[dateKey] || [];
+      const habits = [];
+      dateGoodHabits.forEach(h => {
+        if (h.meditation) habits.push('meditation');
+        if (h.high_veggies) habits.push('veggies');
+        if (h.exercise_bracket && h.exercise_bracket !== 'none') habits.push('exercise');
+      });
+
+      // Get bad habits (risk factors) for this date
+      const dateBadHabits = badHabitsByDate[dateKey] || [];
+      const risks = [];
+      dateBadHabits.forEach(h => {
+        if (h.forgot_meds) risks.push('forgot_meds');
+        if (h.high_salt) risks.push('salty');
+        if (h.poor_sleep) risks.push('sleep');
+        if (h.alcohol_intake) risks.push('alcohol');
+        if (h.smoking) risks.push('smoking');
+        if (h.high_stress) risks.push('stress');
+      });
+
+      // Get symptoms for this date
+      const dateSymptoms = symptomsByDate[dateKey] || [];
+      const symptoms = [];
+      dateSymptoms.forEach(s => {
+        if (s.fatigue) symptoms.push('fatigue');
+        if (s.chest_pain) symptoms.push('chest_pain');
+        if (s.breathlessness) symptoms.push('breathlessness');
+        if (s.weak_limbs) symptoms.push('weak_limbs');
+        if (s.headache) symptoms.push('headache');
+        if (s.dizziness) symptoms.push('dizzy');
+        if (s.blurred_vision) symptoms.push('blur');
+        if (s.nosebleed) symptoms.push('nosebleed');
+        if (s.swelling) symptoms.push('swelling');
+      });
+
+      // Get weight for this date
+      const dateWeight = weightByDate[dateKey];
+
+      // Build data entry (only keep first record for each date, or update with latest)
+      if (!healthData[dateKey]) {
+        healthData[dateKey] = {
+          bp: `${sys}/${dia}`,
+          sys: sys,
+          dia: dia,
+          pulse: pulse,
+          status: status,
+          time: timeValue,
+          timeLabel: record.time || 'เช้า',
+          risks: [...new Set(risks)], // Remove duplicates
+          habits: [...new Set(habits)],
+          symptoms: [...new Set(symptoms)],
+          weight: dateWeight?.weight || null,
+          bmi: dateWeight?.bmi || null
+        };
+      }
     });
   }
 
@@ -138,15 +225,17 @@ const RISK_ICONS = {
   stress: { icon: '😰', label: 'เครียด' },
   alcohol: { icon: '🍺', label: 'ดื่มเหล้า' },
   smoking: { icon: '🚬', label: 'สูบบุหรี่' },
-  coffee: { icon: '☕', label: 'กาแฟ' }
+  coffee: { icon: '☕', label: 'กาแฟ' },
+  forgot_meds: { icon: '💊', label: 'ลืมทานยา' }
 };
 
 const HABIT_ICONS = {
   veggies: { icon: '🥬', label: 'กินผัก' },
-  exercise: { icon: '🏃', label: 'ออกกำลัง' },
+  exercise: { icon: '🏃', label: 'ออกกำลังกาย' },
   water: { icon: '💧', label: 'ดื่มน้ำ' },
   meditation: { icon: '🧘', label: 'นั่งสมาธิ' },
-  sleep_well: { icon: '😴', label: 'นอนพอ' }
+  sleep_well: { icon: '😴', label: 'นอนพอ' },
+  medication: { icon: '💊', label: 'ยา/อาหารเสริม' }
 };
 
 const SYMPTOM_ICONS = {
@@ -154,7 +243,12 @@ const SYMPTOM_ICONS = {
   dizzy: { icon: '💫', label: 'เวียนศีรษะ' },
   chest_pain: { icon: '💔', label: 'เจ็บหน้าอก' },
   nausea: { icon: '🤢', label: 'คลื่นไส้' },
-  blur: { icon: '👁️', label: 'ตาพร่า' }
+  blur: { icon: '👁️', label: 'ตาพร่า' },
+  fatigue: { icon: '😩', label: 'อ่อนเพลีย' },
+  breathlessness: { icon: '😮‍💨', label: 'หายใจลำบาก' },
+  weak_limbs: { icon: '🦵', label: 'แขนขาอ่อนแรง' },
+  nosebleed: { icon: '🩸', label: 'เลือดกำเดา' },
+  swelling: { icon: '🦶', label: 'บวม' }
 };
 
 // ===== Render Calendar =====

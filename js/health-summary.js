@@ -10,52 +10,66 @@ window.HealthSummaryState = {
 // ===== Calculate Stats from BP Records =====
 function calculateHealthStats() {
   const records = AppState.bpRecords || [];
-  const profileStats = AppState.profileStats || {};
+  const goodHabits = AppState.goodHabits || [];
+  const badHabits = AppState.badHabits || [];
+  const symptomLogs = AppState.symptomLogs || [];
+  const weightLogs = AppState.weightLogs || [];
 
   // Filter records based on date range
   let filteredRecords = filterRecordsByDateRange(records);
+  let filteredGoodHabits = filterRecordsByDateRange(goodHabits);
+  let filteredBadHabits = filterRecordsByDateRange(badHabits);
+  let filteredSymptoms = filterRecordsByDateRange(symptomLogs);
 
-  // BP Recording Stats
-  const morningRecords = filteredRecords.filter(r => r.time === 'morning');
-  const eveningRecords = filteredRecords.filter(r => r.time === 'evening');
-  const otherRecords = filteredRecords.filter(r => r.time !== 'morning' && r.time !== 'evening');
+  // BP Recording Stats - count by Thai time labels
+  const morningRecords = filteredRecords.filter(r => r.time === 'เช้า');
+  const eveningRecords = filteredRecords.filter(r => r.time === 'เย็น');
+  const otherRecords = filteredRecords.filter(r => r.time !== 'เช้า' && r.time !== 'เย็น');
 
-  // Habit Analysis
+  // Aggregate good habits
   const positiveHabits = {};
-  const riskFactors = {};
-  const symptoms = {};
-
-  filteredRecords.forEach(record => {
-    // Count positive habits
-    if (record.positive_habits && Array.isArray(record.positive_habits)) {
-      record.positive_habits.forEach(habit => {
-        positiveHabits[habit] = (positiveHabits[habit] || 0) + 1;
-      });
-    }
-
-    // Count risk factors
-    if (record.risk_factors && Array.isArray(record.risk_factors)) {
-      record.risk_factors.forEach(risk => {
-        riskFactors[risk] = (riskFactors[risk] || 0) + 1;
-      });
-    }
-
-    // Count symptoms
-    if (record.symptoms && Array.isArray(record.symptoms)) {
-      record.symptoms.forEach(symptom => {
-        symptoms[symptom] = (symptoms[symptom] || 0) + 1;
-      });
-    }
+  filteredGoodHabits.forEach(h => {
+    if (h.meditation) positiveHabits['meditation'] = (positiveHabits['meditation'] || 0) + 1;
+    if (h.high_veggies) positiveHabits['veggies'] = (positiveHabits['veggies'] || 0) + 1;
+    if (h.exercise_bracket && h.exercise_bracket !== 'none') positiveHabits['exercise'] = (positiveHabits['exercise'] || 0) + 1;
   });
+
+  // Aggregate bad habits (risk factors)
+  const riskFactors = {};
+  filteredBadHabits.forEach(h => {
+    if (h.forgot_meds) riskFactors['forgot_meds'] = (riskFactors['forgot_meds'] || 0) + 1;
+    if (h.high_salt) riskFactors['salty'] = (riskFactors['salty'] || 0) + 1;
+    if (h.poor_sleep) riskFactors['sleep'] = (riskFactors['sleep'] || 0) + 1;
+    if (h.alcohol_intake) riskFactors['alcohol'] = (riskFactors['alcohol'] || 0) + 1;
+    if (h.smoking) riskFactors['smoking'] = (riskFactors['smoking'] || 0) + 1;
+    if (h.high_stress) riskFactors['stress'] = (riskFactors['stress'] || 0) + 1;
+  });
+
+  // Aggregate symptoms
+  const symptoms = {};
+  filteredSymptoms.forEach(s => {
+    if (s.fatigue) symptoms['fatigue'] = (symptoms['fatigue'] || 0) + 1;
+    if (s.chest_pain) symptoms['chest_pain'] = (symptoms['chest_pain'] || 0) + 1;
+    if (s.breathlessness) symptoms['breathlessness'] = (symptoms['breathlessness'] || 0) + 1;
+    if (s.weak_limbs) symptoms['weak_limbs'] = (symptoms['weak_limbs'] || 0) + 1;
+    if (s.headache) symptoms['headache'] = (symptoms['headache'] || 0) + 1;
+    if (s.dizziness) symptoms['dizzy'] = (symptoms['dizzy'] || 0) + 1;
+    if (s.blurred_vision) symptoms['blur'] = (symptoms['blur'] || 0) + 1;
+    if (s.nosebleed) symptoms['nosebleed'] = (symptoms['nosebleed'] || 0) + 1;
+    if (s.swelling) symptoms['swelling'] = (symptoms['swelling'] || 0) + 1;
+  });
+
+  // Get latest weight data
+  const latestWeight = weightLogs.length > 0 ? weightLogs[weightLogs.length - 1] : null;
 
   return {
     totalRecords: filteredRecords.length,
     morningCount: morningRecords.length,
     eveningCount: eveningRecords.length,
     otherCount: otherRecords.length,
-    weight: profileStats.weight || null,
-    height: profileStats.height || null,
-    bmi: profileStats.bmi || null,
+    weight: latestWeight?.weight || null,
+    height: latestWeight?.height || null,
+    bmi: latestWeight?.bmi || null,
     positiveHabits,
     riskFactors,
     symptoms,
@@ -155,7 +169,8 @@ const RISK_LABELS = {
   stress: 'เครียด/กังวล',
   alcohol: 'ดื่มเครื่องดื่มแอลกอฮอล์',
   smoking: 'สูบบุหรี่',
-  coffee: 'ดื่มกาแฟมาก'
+  coffee: 'ดื่มกาแฟมาก',
+  forgot_meds: 'ลืมทานยา'
 };
 
 const SYMPTOM_LABELS = {
@@ -165,7 +180,11 @@ const SYMPTOM_LABELS = {
   nausea: 'คลื่นไส้',
   chest_pain: 'เจ็บหน้าอก',
   blur: 'ตาพร่ามัว',
-  palpitation: 'ใจสั่น'
+  palpitation: 'ใจสั่น',
+  breathlessness: 'หายใจลำบาก',
+  weak_limbs: 'แขนขาอ่อนแรง',
+  nosebleed: 'เลือดกำเดา',
+  swelling: 'บวม'
 };
 
 // ===== Set Date Filter =====
