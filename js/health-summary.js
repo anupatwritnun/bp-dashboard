@@ -1,437 +1,471 @@
 // ===== Health Summary Module =====
-// Apple Health-inspired health summary with calendar & daily timeline
+// Apple Health-inspired health summary dashboard
 
 window.HealthSummaryState = {
-    currentYear: 2026,
-    currentMonth: 0, // January (0-indexed)
-    selectedDate: null,
-    todayKey: null,
-    healthLogs: {} // Will be populated from AppState
+  dateFilter: 'this-month', // 'custom', 'this-month', '3-months', 'all'
+  startDate: null,
+  endDate: null
 };
 
-// ===== Thai Month Names =====
-const TH_MONTHS_FULL = [
-    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-];
+// ===== Calculate Stats from BP Records =====
+function calculateHealthStats() {
+  const records = AppState.bpRecords || [];
+  const profileStats = AppState.profileStats || {};
 
-const TH_MONTHS_SHORT = [
-    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
-];
+  // Filter records based on date range
+  let filteredRecords = filterRecordsByDateRange(records);
 
-const TH_DAYS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+  // BP Recording Stats
+  const morningRecords = filteredRecords.filter(r => r.time === 'morning');
+  const eveningRecords = filteredRecords.filter(r => r.time === 'evening');
+  const otherRecords = filteredRecords.filter(r => r.time !== 'morning' && r.time !== 'evening');
 
-// ===== Category Configuration =====
-const LOG_CATEGORIES = {
-    vitals: {
-        icon: 'fa-heart-pulse',
-        label: 'ความดันโลหิต',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-        iconBg: 'bg-red-100',
-        iconColor: 'text-red-500',
-        dotColor: 'bg-red-400'
-    },
-    medication: {
-        icon: 'fa-pills',
-        label: 'ทานยา',
-        bgColor: 'bg-green-50',
-        borderColor: 'border-green-200',
-        iconBg: 'bg-green-100',
-        iconColor: 'text-green-500',
-        dotColor: 'bg-green-400'
-    },
-    meal: {
-        icon: 'fa-utensils',
-        label: 'มื้ออาหาร',
-        bgColor: 'bg-orange-50',
-        borderColor: 'border-orange-200',
-        iconBg: 'bg-orange-100',
-        iconColor: 'text-orange-500',
-        dotColor: 'bg-orange-400'
-    },
-    symptom: {
-        icon: 'fa-head-side-virus',
-        label: 'อาการ',
-        bgColor: 'bg-slate-50',
-        borderColor: 'border-slate-200',
-        iconBg: 'bg-slate-100',
-        iconColor: 'text-slate-500',
-        dotColor: 'bg-slate-400'
-    },
-    exercise: {
-        icon: 'fa-person-running',
-        label: 'ออกกำลังกาย',
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200',
-        iconBg: 'bg-blue-100',
-        iconColor: 'text-blue-500',
-        dotColor: 'bg-blue-400'
-    },
-    weight: {
-        icon: 'fa-weight-scale',
-        label: 'น้ำหนัก',
-        bgColor: 'bg-purple-50',
-        borderColor: 'border-purple-200',
-        iconBg: 'bg-purple-100',
-        iconColor: 'text-purple-500',
-        dotColor: 'bg-purple-400'
+  // Habit Analysis
+  const positiveHabits = {};
+  const riskFactors = {};
+  const symptoms = {};
+
+  filteredRecords.forEach(record => {
+    // Count positive habits
+    if (record.positive_habits && Array.isArray(record.positive_habits)) {
+      record.positive_habits.forEach(habit => {
+        positiveHabits[habit] = (positiveHabits[habit] || 0) + 1;
+      });
     }
+
+    // Count risk factors
+    if (record.risk_factors && Array.isArray(record.risk_factors)) {
+      record.risk_factors.forEach(risk => {
+        riskFactors[risk] = (riskFactors[risk] || 0) + 1;
+      });
+    }
+
+    // Count symptoms
+    if (record.symptoms && Array.isArray(record.symptoms)) {
+      record.symptoms.forEach(symptom => {
+        symptoms[symptom] = (symptoms[symptom] || 0) + 1;
+      });
+    }
+  });
+
+  return {
+    totalRecords: filteredRecords.length,
+    morningCount: morningRecords.length,
+    eveningCount: eveningRecords.length,
+    otherCount: otherRecords.length,
+    weight: profileStats.weight || null,
+    height: profileStats.height || null,
+    bmi: profileStats.bmi || null,
+    positiveHabits,
+    riskFactors,
+    symptoms,
+    daysInRange: getDaysInRange()
+  };
+}
+
+function filterRecordsByDateRange(records) {
+  const { dateFilter, startDate, endDate } = HealthSummaryState;
+  const now = new Date();
+  let filterStart, filterEnd;
+
+  switch (dateFilter) {
+    case 'this-month':
+      filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      filterEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      break;
+    case '3-months':
+      filterStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      filterEnd = now;
+      break;
+    case 'all':
+      return records;
+    case 'custom':
+      filterStart = startDate ? new Date(startDate) : new Date(0);
+      filterEnd = endDate ? new Date(endDate) : now;
+      break;
+    default:
+      return records;
+  }
+
+  return records.filter(r => {
+    const recordDate = new Date(r.date);
+    return recordDate >= filterStart && recordDate <= filterEnd;
+  });
+}
+
+function getDaysInRange() {
+  const { dateFilter } = HealthSummaryState;
+  const now = new Date();
+
+  switch (dateFilter) {
+    case 'this-month':
+      return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    case '3-months':
+      return 90;
+    case 'all':
+      return 365;
+    default:
+      return 31;
+  }
+}
+
+function getDateRangeText() {
+  const { dateFilter, startDate, endDate } = HealthSummaryState;
+  const now = new Date();
+  const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate()} ${thaiMonths[d.getMonth()]} ${(d.getFullYear() + 543) % 100}`;
+  };
+
+  switch (dateFilter) {
+    case 'this-month':
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return `${formatDate(firstDay)} - ${formatDate(lastDay)}`;
+    case '3-months':
+      const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      return `${formatDate(threeMonthsAgo)} - ${formatDate(now)}`;
+    case 'all':
+      return 'ทั้งหมด';
+    case 'custom':
+      if (startDate && endDate) {
+        return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+      }
+      return 'เลือกช่วงเวลา';
+    default:
+      return '';
+  }
+}
+
+// ===== Habit & Risk Labels =====
+const HABIT_LABELS = {
+  medication: 'ทานยาตรงเวลา',
+  veggies: 'ทานผัก/ผลไม้',
+  exercise: 'ออกกำลังกาย',
+  water: 'ดื่มน้ำเพียงพอ',
+  sleep_well: 'นอนหลับเพียงพอ',
+  meditation: 'นั่งสมาธิ/ผ่อนคลาย'
 };
 
-// ===== Build Health Logs from BP Records =====
-function buildHealthLogsFromRecords() {
-    const logs = {};
+const RISK_LABELS = {
+  salty: 'ทานรสเค็มจัด',
+  sleep: 'นอนน้อย (< 6 ชม.)',
+  stress: 'เครียด/กังวล',
+  alcohol: 'ดื่มเครื่องดื่มแอลกอฮอล์',
+  smoking: 'สูบบุหรี่',
+  coffee: 'ดื่มกาแฟมาก'
+};
 
-    if (AppState.bpRecords && AppState.bpRecords.length > 0) {
-        AppState.bpRecords.forEach(record => {
-            const dateKey = record.date;
+const SYMPTOM_LABELS = {
+  headache: 'ปวดหัว',
+  dizzy: 'เวียนศีรษะ',
+  fatigue: 'อ่อนเพลีย',
+  nausea: 'คลื่นไส้',
+  chest_pain: 'เจ็บหน้าอก',
+  blur: 'ตาพร่ามัว',
+  palpitation: 'ใจสั่น'
+};
 
-            if (!logs[dateKey]) {
-                logs[dateKey] = [];
-            }
-
-            // BP Record
-            const sys = parseInt(record.sys) || 120;
-            const dia = parseInt(record.dia) || 80;
-            const pulse = parseInt(record.pulse) || 72;
-            const timeOfDay = record.time || 'morning';
-
-            logs[dateKey].push({
-                time: timeOfDay === 'morning' ? '08:00' : timeOfDay === 'evening' ? '18:00' : '12:00',
-                category: 'vitals',
-                title: `ความดัน ${sys}/${dia} mmHg`,
-                subtitle: `ชีพจร ${pulse} ครั้ง/นาที`,
-                status: classifyBPStatus(sys, dia)
-            });
-
-            // Add symptoms if any
-            if (record.symptoms && record.symptoms.length > 0) {
-                record.symptoms.forEach(symptom => {
-                    const symptomLabels = {
-                        headache: 'ปวดหัว',
-                        dizzy: 'เวียนศีรษะ',
-                        chest_pain: 'เจ็บหน้าอก',
-                        nausea: 'คลื่นไส้',
-                        blur: 'ตาพร่า'
-                    };
-
-                    logs[dateKey].push({
-                        time: timeOfDay === 'morning' ? '08:30' : '18:30',
-                        category: 'symptom',
-                        title: symptomLabels[symptom] || symptom,
-                        subtitle: 'บันทึกอาการ'
-                    });
-                });
-            }
-
-            // Add positive habits as activities
-            if (record.positive_habits && record.positive_habits.length > 0) {
-                if (record.positive_habits.includes('exercise')) {
-                    logs[dateKey].push({
-                        time: '07:00',
-                        category: 'exercise',
-                        title: 'ออกกำลังกาย',
-                        subtitle: 'กิจกรรมประจำวัน'
-                    });
-                }
-            }
-        });
-
-        // Sort logs by time for each date
-        Object.keys(logs).forEach(dateKey => {
-            logs[dateKey].sort((a, b) => a.time.localeCompare(b.time));
-        });
-    }
-
-    return logs;
+// ===== Set Date Filter =====
+function setHealthSummaryFilter(filter) {
+  HealthSummaryState.dateFilter = filter;
+  renderHealthSummary();
 }
 
-function classifyBPStatus(sys, dia) {
-    if (sys < 120 && dia < 80) return { label: 'ปกติ', color: 'text-green-600', bg: 'bg-green-100' };
-    if (sys < 130 && dia < 80) return { label: 'สูงกว่าปกติเล็กน้อย', color: 'text-amber-600', bg: 'bg-amber-100' };
-    if (sys < 140 || dia < 90) return { label: 'ความดันสูงระยะ 1', color: 'text-orange-600', bg: 'bg-orange-100' };
-    return { label: 'ความดันสูงระยะ 2', color: 'text-red-600', bg: 'bg-red-100' };
-}
-
-// ===== Calendar Navigation =====
-function navigateSummaryMonth(direction) {
-    HealthSummaryState.currentMonth += direction;
-
-    if (HealthSummaryState.currentMonth > 11) {
-        HealthSummaryState.currentMonth = 0;
-        HealthSummaryState.currentYear++;
-    } else if (HealthSummaryState.currentMonth < 0) {
-        HealthSummaryState.currentMonth = 11;
-        HealthSummaryState.currentYear--;
-    }
-
-    renderHealthSummary();
-}
-
-function goToSummaryToday() {
-    const today = new Date();
-    HealthSummaryState.currentYear = today.getFullYear();
-    HealthSummaryState.currentMonth = today.getMonth();
-    HealthSummaryState.selectedDate = HealthSummaryState.todayKey;
-    renderHealthSummary();
-}
-
-function selectSummaryDate(dateKey) {
-    HealthSummaryState.selectedDate = dateKey;
-    renderHealthSummary();
-}
-
-// ===== Get Days in Month =====
-function getSummaryDaysInMonth(year, month) {
-    return new Date(year, month + 1, 0).getDate();
-}
-
-function getSummaryFirstDayOfMonth(year, month) {
-    return new Date(year, month, 1).getDay();
-}
-
-// ===== Format Date Key =====
-function formatDateKey(year, month, day) {
-    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+// ===== BMI Classification =====
+function getBMIStatus(bmi) {
+  if (!bmi) return { label: '-', color: 'gray' };
+  if (bmi < 18.5) return { label: 'น้ำหนักน้อย', color: 'blue' };
+  if (bmi < 25) return { label: 'น้ำหนักปกติ', color: 'purple' };
+  if (bmi < 30) return { label: 'น้ำหนักเกิน', color: 'orange' };
+  return { label: 'อ้วน', color: 'red' };
 }
 
 // ===== Render Health Summary =====
 function renderHealthSummary() {
-    const container = document.getElementById('health-summary-container');
-    if (!container) return;
+  const container = document.getElementById('health-summary-container');
+  if (!container) return;
 
-    // Build health logs from records
-    HealthSummaryState.healthLogs = buildHealthLogsFromRecords();
+  const stats = calculateHealthStats();
+  const dateRangeText = getDateRangeText();
+  const bmiStatus = getBMIStatus(stats.bmi);
 
-    // Set today's date key
-    const today = new Date();
-    HealthSummaryState.todayKey = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  // Sort habits and risks by count
+  const sortedHabits = Object.entries(stats.positiveHabits).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedRisks = Object.entries(stats.riskFactors).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedSymptoms = Object.entries(stats.symptoms).sort((a, b) => b[1] - a[1]).slice(0, 4);
 
-    // Auto-select today if no date selected
-    if (!HealthSummaryState.selectedDate) {
-        HealthSummaryState.selectedDate = HealthSummaryState.todayKey;
-    }
+  // Max values for progress bars
+  const maxSymptomCount = sortedSymptoms.length > 0 ? sortedSymptoms[0][1] : 1;
 
-    const { currentYear, currentMonth, selectedDate, todayKey, healthLogs } = HealthSummaryState;
-    const daysInMonth = getSummaryDaysInMonth(currentYear, currentMonth);
-    const firstDay = getSummaryFirstDayOfMonth(currentYear, currentMonth);
-
-    // Build calendar days HTML
-    let daysHtml = '';
-
-    // Empty cells for days before month starts
-    for (let i = 0; i < firstDay; i++) {
-        daysHtml += `<div class="h-10"></div>`;
-    }
-
-    // Actual days
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dateKey = formatDateKey(currentYear, currentMonth, day);
-        const isSelected = selectedDate === dateKey;
-        const isToday = todayKey === dateKey;
-        const hasData = healthLogs[dateKey] && healthLogs[dateKey].length > 0;
-
-        // Get category dots for this day
-        let dotsHtml = '';
-        if (hasData) {
-            const categories = [...new Set(healthLogs[dateKey].map(l => l.category))];
-            dotsHtml = `
-        <div class="flex gap-0.5 justify-center mt-0.5">
-          ${categories.slice(0, 3).map(cat => `
-            <div class="w-1.5 h-1.5 rounded-full ${LOG_CATEGORIES[cat]?.dotColor || 'bg-slate-300'}"></div>
-          `).join('')}
+  container.innerHTML = `
+    <!-- Header Section -->
+    <div class="sticky top-0 z-20 bg-white/95 backdrop-blur-sm pt-2 pb-4 border-b border-gray-50">
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-gray-800">สรุปสุขภาพ</h1>
+        <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 text-gray-400">
+          <i class="fa-solid fa-chart-pie"></i>
         </div>
-      `;
-        }
+      </div>
 
-        // Day styling
-        let dayClasses = 'relative h-10 w-10 mx-auto flex flex-col items-center justify-center rounded-full transition-all cursor-pointer font-poppins';
-
-        if (isSelected) {
-            dayClasses += ' bg-orange-500 text-white shadow-lg shadow-orange-500/30';
-        } else if (isToday) {
-            dayClasses += ' border-2 border-orange-400 text-orange-600 font-semibold';
-        } else {
-            dayClasses += ' hover:bg-slate-100 text-slate-600';
-        }
-
-        daysHtml += `
-      <button onclick="selectSummaryDate('${dateKey}')" class="${dayClasses}">
-        <span class="text-sm leading-none">${day}</span>
-        ${!isSelected ? dotsHtml : ''}
-      </button>
-    `;
-    }
-
-    // Build timeline HTML
-    const timelineHtml = renderTimeline(selectedDate, healthLogs[selectedDate] || []);
-
-    // Parse selected date for display
-    const selectedDateObj = selectedDate ? new Date(selectedDate) : new Date();
-    const selectedDay = selectedDateObj.getDate();
-    const selectedMonthShort = TH_MONTHS_SHORT[selectedDateObj.getMonth()];
-
-    container.innerHTML = `
-    <!-- Header -->
-    <div class="health-summary-card rounded-3xl p-4 mb-4">
-      <div class="flex items-center justify-between">
-        <!-- Month Navigation -->
-        <button onclick="navigateSummaryMonth(-1)" 
-          class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all">
-          <i class="fa-solid fa-chevron-left text-slate-500"></i>
-        </button>
-        
-        <div class="text-center flex-1">
-          <h2 class="text-xl font-bold text-slate-800 font-kanit">${TH_MONTHS_FULL[currentMonth]}</h2>
-          <p class="text-sm text-slate-500 font-poppins">${currentYear + 543}</p>
+      <!-- Date Filter Pills -->
+      <div class="w-full overflow-x-auto hide-scrollbar -mx-4 px-4 mb-3">
+        <div class="flex space-x-3">
+          <button onclick="setHealthSummaryFilter('custom')" 
+            class="flex-shrink-0 px-5 py-2 rounded-full text-sm font-medium transition-all active:scale-95
+            ${HealthSummaryState.dateFilter === 'custom' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">
+            กำหนดเอง
+          </button>
+          <button onclick="setHealthSummaryFilter('this-month')"
+            class="flex-shrink-0 px-5 py-2 rounded-full text-sm font-medium transition-all active:scale-95
+            ${HealthSummaryState.dateFilter === 'this-month' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">
+            เดือนนี้
+          </button>
+          <button onclick="setHealthSummaryFilter('3-months')"
+            class="flex-shrink-0 px-5 py-2 rounded-full text-sm font-medium transition-all active:scale-95
+            ${HealthSummaryState.dateFilter === '3-months' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">
+            3 เดือน
+          </button>
+          <button onclick="setHealthSummaryFilter('all')"
+            class="flex-shrink-0 px-5 py-2 rounded-full text-sm font-medium transition-all active:scale-95
+            ${HealthSummaryState.dateFilter === 'all' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">
+            ทั้งหมด
+          </button>
         </div>
-        
-        <button onclick="navigateSummaryMonth(1)" 
-          class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all">
-          <i class="fa-solid fa-chevron-right text-slate-500"></i>
-        </button>
       </div>
-      
-      <!-- Today Button -->
-      <div class="flex justify-center mt-3">
-        <button onclick="goToSummaryToday()" 
-          class="px-4 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-600 rounded-full text-xs font-bold transition-all flex items-center gap-1.5">
-          <i class="fa-solid fa-calendar-day"></i>
-          วันนี้
-        </button>
-      </div>
-    </div>
-    
-    <!-- Calendar Grid -->
-    <div class="health-summary-card rounded-3xl p-4 mb-4">
-      <!-- Day Headers -->
-      <div class="grid grid-cols-7 gap-1 mb-2">
-        ${TH_DAYS.map((d, i) => `
-          <div class="text-center text-xs font-medium ${i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-400'} py-2 font-kanit">
-            ${d}
+
+      <!-- Selected Date Range Display -->
+      <div class="bg-gray-50 rounded-2xl p-3 flex justify-between items-center border border-gray-100">
+        <div class="flex items-center gap-3 text-gray-600">
+          <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-brand-500 shadow-sm">
+            <i class="fa-regular fa-calendar-days text-xs"></i>
           </div>
-        `).join('')}
-      </div>
-      
-      <!-- Calendar Days -->
-      <div class="grid grid-cols-7 gap-1">
-        ${daysHtml}
-      </div>
-      
-      <!-- Legend -->
-      <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap justify-center gap-3">
-        <div class="flex items-center gap-1.5">
-          <div class="w-2 h-2 rounded-full bg-red-400"></div>
-          <span class="text-[10px] text-slate-500">ความดัน</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2 h-2 rounded-full bg-green-400"></div>
-          <span class="text-[10px] text-slate-500">ยา</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2 h-2 rounded-full bg-blue-400"></div>
-          <span class="text-[10px] text-slate-500">ออกกำลังกาย</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2 h-2 rounded-full bg-slate-400"></div>
-          <span class="text-[10px] text-slate-500">อาการ</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Daily Log Timeline -->
-    <div class="health-summary-card rounded-3xl p-4">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-            <i class="fa-solid fa-clipboard-list text-orange-500 text-sm"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-800 font-kanit">บันทึกประจำวัน</h3>
-            <p class="text-xs text-slate-500">${selectedDay} ${selectedMonthShort} ${selectedDateObj.getFullYear() + 543}</p>
+          <div class="flex flex-col">
+            <span class="text-[10px] text-gray-400 font-medium">ช่วงเวลาที่เลือก</span>
+            <span class="text-sm font-bold text-gray-700">${dateRangeText}</span>
           </div>
         </div>
+        <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>
       </div>
-      
-      ${timelineHtml}
     </div>
-  `;
-}
 
-// ===== Render Timeline =====
-function renderTimeline(dateKey, logs) {
-    if (!logs || logs.length === 0) {
-        return `
-      <div class="text-center py-8">
-        <div class="text-5xl mb-3 animate-bounce-slow">🐠</div>
-        <p class="text-slate-500 font-kanit">ยังไม่มีบันทึกในวันนี้</p>
-        <p class="text-xs text-slate-400 mt-1">ไปบันทึกสุขภาพในแอป LINE กันเถอะ!</p>
-      </div>
-    `;
-    }
-
-    return `
-    <div class="space-y-3">
-      ${logs.map((log, index) => {
-        const cat = LOG_CATEGORIES[log.category] || LOG_CATEGORIES.vitals;
-        const isLast = index === logs.length - 1;
-
-        return `
-          <div class="relative flex gap-3 timeline-item" style="animation-delay: ${index * 0.1}s">
-            <!-- Timeline Line -->
-            ${!isLast ? `
-              <div class="absolute left-4 top-10 w-0.5 h-full -translate-x-1/2 bg-gradient-to-b from-slate-200 to-transparent"></div>
-            ` : ''}
-            
-            <!-- Time -->
-            <div class="flex-shrink-0 w-12 text-right">
-              <span class="text-xs font-semibold text-slate-400 font-poppins">${log.time}</span>
-            </div>
-            
-            <!-- Card -->
-            <div class="flex-1 ${cat.bgColor} ${cat.borderColor} border rounded-2xl p-3 relative overflow-hidden group hover:shadow-md transition-shadow">
-              <!-- Decorative blur -->
-              <div class="absolute -right-4 -top-4 w-16 h-16 ${cat.iconBg} rounded-full opacity-50 blur-xl"></div>
-              
-              <div class="flex items-start gap-3 relative">
-                <div class="w-10 h-10 ${cat.iconBg} rounded-xl flex items-center justify-center flex-shrink-0">
-                  <i class="fa-solid ${cat.icon} ${cat.iconColor}"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="font-semibold text-slate-700 font-kanit text-sm">${log.title}</p>
-                  <p class="text-xs text-slate-500">${log.subtitle || ''}</p>
-                  ${log.status ? `
-                    <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 ${log.status.bg} ${log.status.color} rounded-full text-[10px] font-bold">
-                      ${log.status.label}
-                    </span>
-                  ` : ''}
-                </div>
+    <!-- Scrollable Content -->
+    <div class="space-y-6 pb-8">
+      
+      <!-- Blood Pressure Section -->
+      <div class="mt-6">
+        <h3 class="text-sm font-bold text-gray-400 mb-3 pl-1">บันทึกความดันโลหิต</h3>
+        <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-soft">
+          <div class="flex justify-between items-center mb-5">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                <i class="fa-solid fa-heart-pulse"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-gray-700">ความดันโลหิต</h4>
+                <span class="text-xs text-gray-400">บันทึกทั้งหมด <strong class="text-gray-700">${stats.totalRecords}</strong> ครั้ง</span>
               </div>
             </div>
           </div>
-        `;
-    }).join('')}
+          
+          <!-- Time Periods Grid -->
+          <div class="grid grid-cols-3 gap-3">
+            <!-- Morning -->
+            <div class="bg-orange-50/60 rounded-2xl p-3 text-center border border-orange-100/50">
+              <i class="fa-regular fa-sun text-orange-400 mb-2 text-lg"></i>
+              <div class="text-xs text-gray-500 mb-1 font-medium">เช้า</div>
+              <div class="text-xl font-bold text-gray-800 font-poppins">${stats.morningCount}</div>
+              <div class="text-[10px] text-gray-400">ครั้ง</div>
+            </div>
+            <!-- Evening -->
+            <div class="bg-indigo-50/60 rounded-2xl p-3 text-center border border-indigo-100/50">
+              <i class="fa-regular fa-moon text-indigo-400 mb-2 text-lg"></i>
+              <div class="text-xs text-gray-500 mb-1 font-medium">เย็น</div>
+              <div class="text-xl font-bold text-gray-800 font-poppins">${stats.eveningCount}</div>
+              <div class="text-[10px] text-gray-400">ครั้ง</div>
+            </div>
+            <!-- Other -->
+            <div class="bg-gray-50/80 rounded-2xl p-3 text-center border border-gray-100">
+              <i class="fa-regular fa-clock text-gray-400 mb-2 text-lg"></i>
+              <div class="text-xs text-gray-500 mb-1 font-medium">ช่วงอื่น</div>
+              <div class="text-xl font-bold text-gray-800 font-poppins">${stats.otherCount}</div>
+              <div class="text-[10px] text-gray-400">ครั้ง</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body Metrics Section -->
+      <div>
+        <h3 class="text-sm font-bold text-gray-400 mb-3 pl-1">สัดส่วนร่างกาย</h3>
+        <div class="grid grid-cols-2 gap-4">
+          
+          <!-- Weight Card -->
+          <div class="bg-blue-50/50 p-4 rounded-3xl border border-blue-100 relative">
+            <div class="flex justify-between items-start mb-2">
+              <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-500 shadow-sm">
+                <i class="fa-solid fa-weight-scale text-xs"></i>
+              </div>
+            </div>
+            <div class="mt-2">
+              <p class="text-xs text-gray-500 font-medium">น้ำหนัก</p>
+              <h4 class="text-2xl font-poppins font-bold text-gray-800">
+                ${stats.weight ? stats.weight : '-'} 
+                <span class="text-sm text-gray-500 font-normal">กก.</span>
+              </h4>
+            </div>
+            <div class="mt-3 flex items-center gap-1 text-[10px] text-gray-400">
+              <i class="fa-solid fa-ruler-vertical"></i>
+              <span>ส่วนสูง ${stats.height ? stats.height + ' ซม.' : '-'}</span>
+            </div>
+          </div>
+
+          <!-- BMI Card -->
+          <div class="bg-purple-50/50 p-4 rounded-3xl border border-purple-100">
+            <div class="flex justify-between items-start mb-2">
+              <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-purple-500 shadow-sm">
+                <i class="fa-solid fa-chart-simple text-xs"></i>
+              </div>
+            </div>
+            <div class="mt-2">
+              <p class="text-xs text-gray-500 font-medium">BMI</p>
+              <h4 class="text-2xl font-poppins font-bold text-gray-800">
+                ${stats.bmi ? stats.bmi.toFixed(1) : '-'}
+              </h4>
+            </div>
+            <div class="mt-3">
+              <span class="text-[10px] font-bold text-${bmiStatus.color}-600 bg-${bmiStatus.color}-100 px-2 py-1 rounded-md">
+                ${bmiStatus.label}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Habits Analysis -->
+      <div>
+        <h3 class="text-sm font-bold text-gray-400 mb-3 pl-1">วิเคราะห์พฤติกรรม</h3>
+        
+        <!-- Positive Habits -->
+        <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-soft mb-4">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <h4 class="font-bold text-gray-700">ทำได้ดี</h4>
+          </div>
+          
+          ${sortedHabits.length > 0 ? sortedHabits.map(([habit, count]) => {
+    const percentage = Math.min((count / stats.daysInRange) * 100, 100);
+    return `
+              <div class="mb-4 last:mb-0">
+                <div class="flex justify-between text-xs font-medium mb-1.5">
+                  <span class="text-gray-600">${HABIT_LABELS[habit] || habit}</span>
+                  <span class="text-gray-400">${count}/${stats.daysInRange} วัน</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                  <div class="bg-green-500 h-2 rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
+                </div>
+              </div>
+            `;
+  }).join('') : `
+            <p class="text-sm text-gray-400 text-center py-4">
+              <i class="fa-regular fa-face-smile-beam text-2xl mb-2 block text-gray-300"></i>
+              ยังไม่มีข้อมูลพฤติกรรมดี
+            </p>
+          `}
+        </div>
+
+        <!-- Risk Factors -->
+        <div class="bg-red-50/60 rounded-3xl p-5 border border-red-100">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h4 class="font-bold text-gray-700">ต้องระวัง</h4>
+          </div>
+
+          ${sortedRisks.length > 0 ? sortedRisks.map(([risk, count]) => {
+    const percentage = Math.min((count / stats.totalRecords) * 100, 100);
+    const severity = percentage > 50 ? 'สูง' : percentage > 25 ? 'ปานกลาง' : `${count} ครั้ง`;
+    const severityColor = percentage > 50 ? 'text-red-500 font-bold' : 'text-gray-500';
+    return `
+              <div class="mb-4 last:mb-0">
+                <div class="flex justify-between text-xs font-medium mb-1.5">
+                  <span class="text-gray-600">${RISK_LABELS[risk] || risk}</span>
+                  <span class="${severityColor}">${severity}</span>
+                </div>
+                <div class="w-full bg-white rounded-full h-2">
+                  <div class="bg-red-400 h-2 rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
+                </div>
+              </div>
+            `;
+  }).join('') : `
+            <p class="text-sm text-gray-500 text-center py-4">
+              <i class="fa-solid fa-shield-check text-2xl mb-2 block text-green-400"></i>
+              ไม่พบปัจจัยเสี่ยง 🎉
+            </p>
+          `}
+        </div>
+      </div>
+
+      <!-- Symptom Frequency Chart -->
+      <div>
+        <div class="flex justify-between items-end mb-3">
+          <h3 class="text-sm font-bold text-gray-400 pl-1">อาการที่พบบ่อย</h3>
+        </div>
+        
+        <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-soft">
+          ${sortedSymptoms.length > 0 ? `
+            <div class="space-y-4">
+              ${sortedSymptoms.map(([symptom, count]) => {
+    const percentage = (count / maxSymptomCount) * 100;
+    const gradientClass = percentage > 60 ? 'from-orange-300 to-red-500' : percentage > 30 ? 'from-yellow-200 to-orange-400' : 'from-yellow-100 to-yellow-300';
+    return `
+                  <div class="flex items-center gap-3">
+                    <div class="w-20 text-xs font-medium text-gray-500 truncate text-right">${SYMPTOM_LABELS[symptom] || symptom}</div>
+                    <div class="flex-1 h-3 bg-gray-50 rounded-r-full rounded-l-sm relative">
+                      <div class="absolute top-0 left-0 h-full rounded-r-full rounded-l-sm bg-gradient-to-r ${gradientClass} transition-all duration-1000" style="width: ${percentage}%"></div>
+                    </div>
+                    <div class="w-6 text-xs font-bold text-gray-700 text-right">${count}</div>
+                  </div>
+                `;
+  }).join('')}
+            </div>
+          ` : `
+            <p class="text-sm text-gray-400 text-center py-6">
+              <i class="fa-solid fa-heart text-2xl mb-2 block text-green-400"></i>
+              ไม่พบอาการผิดปกติ
+            </p>
+          `}
+        </div>
+      </div>
+
+      <!-- Empty State (Show when no records) -->
+      ${stats.totalRecords === 0 ? `
+        <div class="text-center py-8">
+          <div class="text-6xl mb-4 animate-bounce-slow">🐠</div>
+          <h3 class="text-lg font-bold text-gray-700 mb-2">ยังไม่มีข้อมูลในช่วงเวลานี้</h3>
+          <p class="text-sm text-gray-500">ลองเปลี่ยนช่วงเวลาดูนะ!</p>
+        </div>
+      ` : ''}
+
     </div>
   `;
 }
 
 // ===== Initialize Health Summary =====
 function initHealthSummary() {
-    // Set to current date
-    const today = new Date();
-    HealthSummaryState.currentYear = today.getFullYear();
-    HealthSummaryState.currentMonth = today.getMonth();
-    HealthSummaryState.selectedDate = null; // Will auto-select today
+  // Set default filter to this month
+  HealthSummaryState.dateFilter = 'this-month';
 
-    // Render
-    renderHealthSummary();
+  // Render
+  renderHealthSummary();
 }
 
 // Expose to global scope
-window.navigateSummaryMonth = navigateSummaryMonth;
-window.goToSummaryToday = goToSummaryToday;
-window.selectSummaryDate = selectSummaryDate;
+window.setHealthSummaryFilter = setHealthSummaryFilter;
 window.renderHealthSummary = renderHealthSummary;
 window.initHealthSummary = initHealthSummary;
