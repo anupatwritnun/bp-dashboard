@@ -22,6 +22,11 @@ function navigate(page) {
       btn.classList.remove("text-orange-500", "font-semibold");
     }
   });
+
+  // Initialize calendar when navigating to it
+  if (page === 'calendar' && window.initCalendar) {
+    window.initCalendar();
+  }
 }
 
 function printDashboard() {
@@ -72,9 +77,11 @@ async function initApp() {
         // Navigate to dashboard
         navigate("dashboard");
 
-        // Hide profile tab in shared view
+        // Hide profile and calendar tabs in shared view
         const profileTab = document.querySelector('[data-nav="profile"]');
         if (profileTab) profileTab.style.display = 'none';
+        const calendarTab = document.querySelector('[data-nav="calendar"]');
+        if (calendarTab) calendarTab.style.display = 'none';
 
         loader.style.display = "none";
         return; // Exit early, don't need LIFF login
