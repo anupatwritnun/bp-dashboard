@@ -190,7 +190,28 @@ const SYMPTOM_LABELS = {
 // ===== Set Date Filter =====
 function setHealthSummaryFilter(filter) {
   HealthSummaryState.dateFilter = filter;
+
+  // Set default dates for custom filter if not already set
+  if (filter === 'custom' && (!HealthSummaryState.startDate || !HealthSummaryState.endDate)) {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    HealthSummaryState.startDate = firstDayOfMonth.toISOString().split('T')[0];
+    HealthSummaryState.endDate = now.toISOString().split('T')[0];
+  }
+
   renderHealthSummary();
+}
+
+// ===== Apply Custom Date Range =====
+function applyCustomDateRange() {
+  const startInput = document.getElementById('custom-start-date');
+  const endInput = document.getElementById('custom-end-date');
+
+  if (startInput && endInput && startInput.value && endInput.value) {
+    HealthSummaryState.startDate = startInput.value;
+    HealthSummaryState.endDate = endInput.value;
+    renderHealthSummary();
+  }
 }
 
 // ===== BMI Classification =====
@@ -255,19 +276,58 @@ function renderHealthSummary() {
         </div>
       </div>
 
-      <!-- Selected Date Range Display -->
-      <div class="bg-gray-50 rounded-2xl p-3 flex justify-between items-center border border-gray-100">
-        <div class="flex items-center gap-3 text-gray-600">
-          <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-brand-500 shadow-sm">
-            <i class="fa-regular fa-calendar-days text-xs"></i>
+      <!-- Selected Date Range Display / Custom Date Picker -->
+      ${HealthSummaryState.dateFilter === 'custom' ? `
+        <div class="bg-brand-50 rounded-2xl p-4 border border-brand-200">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white shadow-sm">
+              <i class="fa-regular fa-calendar-days text-xs"></i>
+            </div>
+            <span class="text-sm font-bold text-gray-700">เลือกช่วงเวลา</span>
           </div>
-          <div class="flex flex-col">
-            <span class="text-[10px] text-gray-400 font-medium">ช่วงเวลาที่เลือก</span>
-            <span class="text-sm font-bold text-gray-700">${dateRangeText}</span>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-gray-500 font-medium mb-1 block">วันเริ่มต้น</label>
+              <input 
+                type="date" 
+                id="custom-start-date" 
+                value="${HealthSummaryState.startDate || ''}"
+                onchange="applyCustomDateRange()"
+                class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-500 font-medium mb-1 block">วันสิ้นสุด</label>
+              <input 
+                type="date" 
+                id="custom-end-date" 
+                value="${HealthSummaryState.endDate || ''}"
+                onchange="applyCustomDateRange()"
+                class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              />
+            </div>
           </div>
+          ${HealthSummaryState.startDate && HealthSummaryState.endDate ? `
+            <div class="mt-3 flex items-center gap-2 text-xs text-brand-600">
+              <i class="fa-solid fa-check-circle"></i>
+              <span>แสดงข้อมูล: ${dateRangeText}</span>
+            </div>
+          ` : ''}
         </div>
-        <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>
-      </div>
+      ` : `
+        <div class="bg-gray-50 rounded-2xl p-3 flex justify-between items-center border border-gray-100">
+          <div class="flex items-center gap-3 text-gray-600">
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-brand-500 shadow-sm">
+              <i class="fa-regular fa-calendar-days text-xs"></i>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-[10px] text-gray-400 font-medium">ช่วงเวลาที่เลือก</span>
+              <span class="text-sm font-bold text-gray-700">${dateRangeText}</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>
+        </div>
+      `}
     </div>
 
     <!-- Scrollable Content -->
@@ -486,3 +546,4 @@ function initHealthSummary() {
 window.setHealthSummaryFilter = setHealthSummaryFilter;
 window.renderHealthSummary = renderHealthSummary;
 window.initHealthSummary = initHealthSummary;
+window.applyCustomDateRange = applyCustomDateRange;
