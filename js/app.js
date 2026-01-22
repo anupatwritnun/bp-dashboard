@@ -39,19 +39,194 @@ function navigate(page) {
   }
 }
 
-// ===== Print / Save Dashboard =====
-async function printDashboard() {
-  // Check if mobile device
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+// ===== Save Dashboard + Health Summary as PDF =====
+window.saveDashboardPDF = async function () {
+  const btn = event?.target?.closest('button');
+  let originalHTML = '';
 
-  if (isMobile) {
-    // Mobile: Generate image and save to files
-    await saveDashboardAsImage();
-  } else {
-    // Desktop: Use native print
-    window.print();
+  // Show loading feedback
+  if (btn) {
+    originalHTML = btn.innerHTML;
+    btn.innerHTML = '📄 กำลังสร้าง PDF...';
+    btn.disabled = true;
   }
-}
+
+  try {
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF) {
+      alert('ไม่สามารถโหลด PDF library ได้');
+      return;
+    }
+
+    // Create PDF in A4 size
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const contentWidth = pageWidth - (margin * 2);
+
+    // Hide no-print elements
+    const noPrintElements = document.querySelectorAll('.no-print');
+    noPrintElements.forEach(el => el.style.visibility = 'hidden');
+
+    // ===== Capture Dashboard (ภาพรวม) =====
+    const dashboardPage = document.getElementById('page-dashboard');
+    if (dashboardPage) {
+      // Temporarily show the dashboard
+      const wasActive = dashboardPage.classList.contains('page-active');
+      dashboardPage.classList.add('page-active');
+      dashboardPage.style.display = 'block';
+
+      const dashboardCanvas = await html2canvas(dashboardPage, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#fdfbf7',
+        logging: false,
+        windowWidth: 800,
+      });
+
+      // Calculate dimensions to fit page
+      const dashImgData = dashboardCanvas.toDataURL('image/jpeg', 0.95);
+      const dashRatio = dashboardCanvas.height / dashboardCanvas.width;
+      const dashImgWidth = contentWidth;
+      const dashImgHeight = dashImgWidth * dashRatio;
+
+      // Add dashboard image (may span multiple pages)
+      let yPosition = margin;
+      let remainingHeight = dashImgHeight;
+      let sourceY = 0;
+
+      while (remainingHeight > 0) {
+        const availableHeight = pageHeight - margin - yPosition;
+        const sliceHeight = Math.min(remainingHeight, availableHeight);
+        const sliceRatio = sliceHeight / dashImgHeight;
+
+        // Create a temp canvas for this slice
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = dashboardCanvas.width;
+        sliceCanvas.height = dashboardCanvas.height * sliceRatio;
+        const sliceCtx = sliceCanvas.getContext('2d');
+        sliceCtx.drawImage(
+          dashboardCanvas,
+          0, sourceY * (dashboardCanvas.height / dashImgHeight),
+          dashboardCanvas.width, sliceCanvas.height,
+          0, 0,
+          sliceCanvas.width, sliceCanvas.height
+        );
+
+        pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, yPosition, dashImgWidth, sliceHeight);
+
+        sourceY += sliceHeight;
+        remainingHeight -= sliceHeight;
+
+        if (remainingHeight > 0) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+      }
+
+      if (!wasActive) {
+        dashboardPage.classList.remove('page-active');
+        dashboardPage.style.display = '';
+      }
+    }
+
+    // ===== Capture Health Summary (สรุปสุขภาพ) =====
+    const healthSummaryPage = document.getElementById('page-health-summary');
+    if (healthSummaryPage) {
+      // Initialize health summary if not already done
+      if (window.initHealthSummary) {
+        await window.initHealthSummary();
+      }
+
+      // Temporarily show the health summary
+      const wasActive = healthSummaryPage.classList.contains('page-active');
+      healthSummaryPage.classList.add('page-active');
+      healthSummaryPage.style.display = 'block';
+
+      // Small delay to let it render
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const healthCanvas = await html2canvas(healthSummaryPage, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#fdfbf7',
+        logging: false,
+        windowWidth: 800,
+      });
+
+      // Add new page for health summary
+      pdf.addPage();
+
+      const healthImgData = healthCanvas.toDataURL('image/jpeg', 0.95);
+      const healthRatio = healthCanvas.height / healthCanvas.width;
+      const healthImgWidth = contentWidth;
+      const healthImgHeight = healthImgWidth * healthRatio;
+
+      // Add health summary image (may span multiple pages)
+      let yPosition = margin;
+      let remainingHeight = healthImgHeight;
+      let sourceY = 0;
+
+      while (remainingHeight > 0) {
+        const availableHeight = pageHeight - margin - yPosition;
+        const sliceHeight = Math.min(remainingHeight, availableHeight);
+        const sliceRatio = sliceHeight / healthImgHeight;
+
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = healthCanvas.width;
+        sliceCanvas.height = healthCanvas.height * sliceRatio;
+        const sliceCtx = sliceCanvas.getContext('2d');
+        sliceCtx.drawImage(
+          healthCanvas,
+          0, sourceY * (healthCanvas.height / healthImgHeight),
+          healthCanvas.width, sliceCanvas.height,
+          0, 0,
+          sliceCanvas.width, sliceCanvas.height
+        );
+
+        pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, yPosition, healthImgWidth, sliceHeight);
+
+        sourceY += sliceHeight;
+        remainingHeight -= sliceHeight;
+
+        if (remainingHeight > 0) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+      }
+
+      if (!wasActive) {
+        healthSummaryPage.classList.remove('page-active');
+        healthSummaryPage.style.display = '';
+      }
+    }
+
+    // Restore no-print elements
+    noPrintElements.forEach(el => el.style.visibility = 'visible');
+
+    // Create filename with date
+    const today = new Date().toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\//g, '-');
+    const filename = `BP_Report_${today}.pdf`;
+
+    // Save the PDF
+    pdf.save(filename);
+
+  } catch (err) {
+    console.error('Failed to create PDF:', err);
+    alert('ไม่สามารถสร้าง PDF ได้ กรุณาลองใหม่');
+  } finally {
+    // Restore button
+    if (btn) {
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+    }
+  }
+};
 
 // ===== Save Dashboard as Image (for mobile) =====
 window.saveDashboardAsImage = async function () {

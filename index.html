@@ -66,6 +66,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script defer src="https://va.vercel-scripts.com/v1/script.js"></script>
@@ -401,9 +402,9 @@
             class="no-print flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-xs font-bold shadow-md shadow-green-500/20 transition-all">
             📤 แชร์
           </button>
-          <button onclick="printDashboard()"
+          <button onclick="saveDashboardPDF()"
             class="no-print hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-600 hover:text-brand-600 hover:border-brand-200 hover:bg-brand-50 transition-all shadow-sm">
-            🖨 พิมพ์รายงาน
+            📄 บันทึก PDF
           </button>
         </div>
       </div>
@@ -461,13 +462,9 @@
         </div>
 
         <div class="mt-6 flex gap-3 border-t border-slate-100 pt-4 sm:hidden">
-          <button onclick="saveDashboardAsImage()"
-            class="flex-1 flex justify-center items-center gap-2 px-4 py-3 bg-brand-500 text-white rounded-xl shadow-lg shadow-brand-500/30 hover:bg-brand-600 transition-all font-medium text-sm">
-            📸 บันทึกรูป
-          </button>
-          <button onclick="window.print()"
-            class="flex-1 flex justify-center items-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all font-medium text-sm">
-            🖨️ พิมพ์ PDF
+          <button onclick="saveDashboardPDF()"
+            class="w-full flex justify-center items-center gap-2 px-6 py-3 bg-brand-500 text-white rounded-xl shadow-lg shadow-brand-500/30 hover:bg-brand-600 transition-all font-medium text-sm">
+            📄 บันทึก PDF
           </button>
         </div>
       </div>
