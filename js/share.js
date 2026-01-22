@@ -329,9 +329,9 @@ window.renderSharedViewBanner = function (expiresAt) {
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="saveDashboardPDF()"
+      <button onclick="window.print()"
          class="px-3 py-1.5 bg-white text-green-600 hover:bg-green-50 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5">
-        📄 บันทึก PDF
+        🖨️ พิมพ์รายงาน
       </button>
       <a href="https://lin.ee/XG20wHP" target="_blank"
          class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5">
