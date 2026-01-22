@@ -39,8 +39,104 @@ function navigate(page) {
   }
 }
 
-function printDashboard() {
-  window.print();
+// ===== Print / Save Dashboard =====
+async function printDashboard() {
+  // Check if mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    // Mobile: Generate image and save to files
+    await saveDashboardAsImage();
+  } else {
+    // Desktop: Use native print
+    window.print();
+  }
+}
+
+// ===== Save Dashboard as Image (for mobile) =====
+async function saveDashboardAsImage() {
+  const dashboardPage = document.getElementById('page-dashboard');
+  if (!dashboardPage) return;
+
+  // Show loading feedback
+  const btn = event?.target?.closest('button');
+  let originalHTML = '';
+  if (btn) {
+    originalHTML = btn.innerHTML;
+    btn.innerHTML = '📸 กำลังสร้างรูป...';
+    btn.disabled = true;
+  }
+
+  try {
+    // Hide elements that shouldn't be in the screenshot
+    const noPrintElements = document.querySelectorAll('.no-print');
+    noPrintElements.forEach(el => el.style.visibility = 'hidden');
+
+    // Use html2canvas to capture the dashboard
+    const canvas = await html2canvas(dashboardPage, {
+      scale: 2, // Higher resolution
+      useCORS: true,
+      backgroundColor: '#fdfbf7',
+      logging: false,
+      windowWidth: 800, // Consistent width for better layout
+    });
+
+    // Restore hidden elements
+    noPrintElements.forEach(el => el.style.visibility = 'visible');
+
+    // Convert to blob and download
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        alert('ไม่สามารถสร้างรูปภาพได้');
+        return;
+      }
+
+      // Create filename with date
+      const today = new Date().toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\//g, '-');
+      const filename = `BP_Dashboard_${today}.png`;
+
+      // Try using Web Share API first (better for mobile)
+      if (navigator.share && navigator.canShare) {
+        const file = new File([blob], filename, { type: 'image/png' });
+        const shareData = { files: [file] };
+
+        if (navigator.canShare(shareData)) {
+          try {
+            await navigator.share(shareData);
+            return;
+          } catch (e) {
+            // User cancelled or share failed, fall back to download
+            console.log('Share cancelled, falling back to download');
+          }
+        }
+      }
+
+      // Fallback: Direct download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+    }, 'image/png', 0.95);
+
+  } catch (err) {
+    console.error('Failed to save dashboard:', err);
+    alert('ไม่สามารถบันทึกได้ กรุณาลองใหม่');
+  } finally {
+    // Restore button
+    if (btn) {
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+    }
+  }
 }
 
 // ===== LIFF + APP INIT =====
