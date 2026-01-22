@@ -242,8 +242,57 @@ window.saveDashboardPDF = async function () {
     }).replace(/\//g, '-');
     const filename = `BP_Report_${today}.pdf`;
 
-    // Save the PDF
-    pdf.save(filename);
+    // Get PDF as blob for better mobile/LIFF compatibility
+    const pdfBlob = pdf.output('blob');
+
+    // Check if running in LIFF or mobile
+    const isLIFF = typeof liff !== 'undefined' && liff.isInClient && liff.isInClient();
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile || isLIFF) {
+      // Try Web Share API first (works best on mobile)
+      if (navigator.share && navigator.canShare) {
+        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+        const shareData = { files: [file] };
+
+        if (navigator.canShare(shareData)) {
+          try {
+            await navigator.share(shareData);
+            return; // Successfully shared/saved
+          } catch (e) {
+            console.log('Share cancelled or failed, trying fallback...');
+          }
+        }
+      }
+
+      // Fallback: Open PDF in new tab/window (works in LIFF external browser)
+      const blobUrl = URL.createObjectURL(pdfBlob);
+
+      // Try to open in external browser if in LIFF
+      if (isLIFF && liff.openWindow) {
+        // For LIFF, we need to use a data URL approach or external browser
+        const reader = new FileReader();
+        reader.onload = function () {
+          const dataUrl = reader.result;
+          // Open in external browser
+          liff.openWindow({
+            url: blobUrl,
+            external: true
+          });
+        };
+        reader.readAsDataURL(pdfBlob);
+      } else {
+        // Regular mobile browser - open in new tab
+        window.open(blobUrl, '_blank');
+      }
+
+      // Cleanup after delay
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+
+    } else {
+      // Desktop: Use standard download
+      pdf.save(filename);
+    }
 
   } catch (err) {
     console.error('Failed to create PDF:', err);
