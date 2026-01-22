@@ -114,49 +114,97 @@ function generateQRCode(url) {
 }
 
 // ===== Download QR Code =====
-window.downloadQRCode = function () {
+window.downloadQRCode = async function () {
     const container = document.getElementById('share-qr-container');
-    if (!container) return;
+    if (!container) {
+        alert('ไม่พบ QR Code container');
+        return;
+    }
+
+    // Small delay to ensure QR code is fully rendered
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Find the canvas or img element inside the QR container
     const canvas = container.querySelector('canvas');
     const img = container.querySelector('img');
 
-    let dataUrl;
-
-    if (canvas) {
-        // Get data URL from canvas
-        dataUrl = canvas.toDataURL('image/png');
-    } else if (img) {
-        // If it's an image, we need to draw it to a canvas first
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = img.width;
-        tempCanvas.height = img.height;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-        ctx.drawImage(img, 0, 0);
-        dataUrl = tempCanvas.toDataURL('image/png');
-    } else {
-        alert('ไม่พบ QR Code');
+    if (!canvas && !img) {
+        alert('ไม่พบ QR Code กรุณาลองใหม่');
         return;
     }
 
-    // Create filename with date
-    const today = new Date().toLocaleDateString('th-TH', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    }).replace(/\//g, '-');
-    const filename = `BP_Share_QRCode_${today}.png`;
+    try {
+        let blob;
 
-    // Trigger download
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+        if (canvas) {
+            // Get blob from canvas
+            blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        } else if (img && img.src) {
+            // For image element, fetch and convert to blob
+            if (img.src.startsWith('data:')) {
+                // Data URL - convert to blob
+                const response = await fetch(img.src);
+                blob = await response.blob();
+            } else {
+                // External URL - draw to canvas first
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = img.naturalWidth || 180;
+                tempCanvas.height = img.naturalHeight || 180;
+                const ctx = tempCanvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                ctx.drawImage(img, 0, 0);
+                blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/png'));
+            }
+        }
+
+        if (!blob) {
+            alert('ไม่สามารถสร้างไฟล์ได้');
+            return;
+        }
+
+        // Create filename with date
+        const today = new Date().toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).replace(/\//g, '-');
+        const filename = `BP_Share_QRCode_${today}.png`;
+
+        // Try Web Share API for mobile (allows saving to files)
+        if (navigator.share && navigator.canShare) {
+            const file = new File([blob], filename, { type: 'image/png' });
+            const shareData = { files: [file] };
+
+            if (navigator.canShare(shareData)) {
+                try {
+                    await navigator.share(shareData);
+                    return;
+                } catch (e) {
+                    console.log('Share cancelled, falling back to download');
+                }
+            }
+        }
+
+        // Fallback: Direct download using blob URL
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+
+    } catch (err) {
+        console.error('Download failed:', err);
+        alert('ไม่สามารถดาวน์โหลดได้ กรุณาลองใหม่');
+    }
 };
 
 // ===== Format Expiry Time =====

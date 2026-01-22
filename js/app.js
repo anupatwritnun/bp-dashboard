@@ -54,7 +54,7 @@ async function printDashboard() {
 }
 
 // ===== Save Dashboard as Image (for mobile) =====
-async function saveDashboardAsImage() {
+window.saveDashboardAsImage = async function () {
   const dashboardPage = document.getElementById('page-dashboard');
   if (!dashboardPage) return;
 

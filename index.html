@@ -460,10 +460,14 @@
           </div>
         </div>
 
-        <div class="mt-6 flex justify-end border-t border-slate-100 pt-4 sm:hidden">
-          <button onclick="printDashboard()"
-            class="w-full flex justify-center items-center gap-2 px-6 py-3 bg-brand-500 text-white rounded-xl shadow-lg shadow-brand-500/30 hover:bg-brand-600 transition-all font-medium text-sm">
-            📸 บันทึกรูป / แชร์
+        <div class="mt-6 flex gap-3 border-t border-slate-100 pt-4 sm:hidden">
+          <button onclick="saveDashboardAsImage()"
+            class="flex-1 flex justify-center items-center gap-2 px-4 py-3 bg-brand-500 text-white rounded-xl shadow-lg shadow-brand-500/30 hover:bg-brand-600 transition-all font-medium text-sm">
+            📸 บันทึกรูป
+          </button>
+          <button onclick="window.print()"
+            class="flex-1 flex justify-center items-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all font-medium text-sm">
+            🖨️ พิมพ์ PDF
           </button>
         </div>
       </div>
