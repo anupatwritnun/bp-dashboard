@@ -330,7 +330,7 @@ window.renderSharedViewBanner = function (expiresAt) {
     </div>
     <a href="https://lin.ee/XG20wHP" target="_blank"
        class="px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5">
-      <span>🐟</span> Add Line ปลาท๊องง
+      <img src="./line logo.svg" alt="LINE" class="w-4 h-4"> Add Line ปลาท๊องง
     </a>
   `;
 

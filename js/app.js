@@ -69,6 +69,26 @@ window.saveDashboardPDF = async function () {
     const noPrintElements = document.querySelectorAll('.no-print');
     noPrintElements.forEach(el => el.style.visibility = 'hidden');
 
+    // ===== Temporarily remove shadows and blur for clean PDF =====
+    const elementsWithShadow = document.querySelectorAll('[class*="shadow"], [class*="blur"]');
+    const originalStyles = [];
+    elementsWithShadow.forEach((el, index) => {
+      originalStyles[index] = {
+        boxShadow: el.style.boxShadow,
+        filter: el.style.filter
+      };
+      el.style.boxShadow = 'none';
+      el.style.filter = 'none';
+    });
+
+    // Also handle elements with backdrop-blur
+    const backdropElements = document.querySelectorAll('[class*="backdrop"]');
+    const backdropOriginal = [];
+    backdropElements.forEach((el, index) => {
+      backdropOriginal[index] = el.style.backdropFilter;
+      el.style.backdropFilter = 'none';
+    });
+
     // ===== Capture Dashboard (ภาพรวม) =====
     const dashboardPage = document.getElementById('page-dashboard');
     if (dashboardPage) {
@@ -205,6 +225,15 @@ window.saveDashboardPDF = async function () {
     // Restore no-print elements
     noPrintElements.forEach(el => el.style.visibility = 'visible');
 
+    // ===== Restore shadows and blur effects =====
+    elementsWithShadow.forEach((el, index) => {
+      el.style.boxShadow = originalStyles[index]?.boxShadow || '';
+      el.style.filter = originalStyles[index]?.filter || '';
+    });
+    backdropElements.forEach((el, index) => {
+      el.style.backdropFilter = backdropOriginal[index] || '';
+    });
+
     // Create filename with date
     const today = new Date().toLocaleDateString('th-TH', {
       year: 'numeric',
@@ -219,6 +248,18 @@ window.saveDashboardPDF = async function () {
   } catch (err) {
     console.error('Failed to create PDF:', err);
     alert('ไม่สามารถสร้าง PDF ได้ กรุณาลองใหม่');
+
+    // Restore styles on error
+    try {
+      document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'visible');
+      document.querySelectorAll('[class*="shadow"], [class*="blur"]').forEach(el => {
+        el.style.boxShadow = '';
+        el.style.filter = '';
+      });
+      document.querySelectorAll('[class*="backdrop"]').forEach(el => {
+        el.style.backdropFilter = '';
+      });
+    } catch (e) { }
   } finally {
     // Restore button
     if (btn) {
