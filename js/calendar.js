@@ -487,32 +487,6 @@ function renderDetailPanel(dateKey, data) {
             <span>180+</span>
           </div>
         </div>
-        
-        <!-- Pulse & Time Row -->
-        <div class="p-4 grid grid-cols-2 gap-3">
-          <!-- Pulse Card -->
-          <div class="bg-slate-50 rounded-2xl p-4 flex items-center gap-3">
-            <div class="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
-              <span class="text-rose-500 text-lg">❤️</span>
-            </div>
-            <div>
-              <p class="text-2xl font-bold text-slate-700">${data.pulse || '–'}</p>
-              <p class="text-xs text-slate-400">ชีพจร/นาที</p>
-            </div>
-          </div>
-          
-          <!-- Time Card -->
-          <div class="bg-slate-50 rounded-2xl p-4 flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <span class="text-blue-500 text-lg">${data.time === 'morning' ? '🌅' : data.time === 'evening' ? '🌆' : '⏰'}</span>
-            </div>
-            <div>
-              <p class="text-sm font-bold text-slate-700">${data.time === 'morning' ? 'เช้า' : data.time === 'evening' ? 'เย็น' : 'อื่นๆ'}</p>
-              <p class="text-xs text-slate-400">ช่วงเวลาวัด</p>
-            </div>
-          </div>
-        </div>
-      </div>
       
       <!-- Risk & Habits Row -->
       <div class="grid grid-cols-2 gap-3">

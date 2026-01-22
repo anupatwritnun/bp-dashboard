@@ -87,13 +87,10 @@ async function initApp() {
         // Navigate to dashboard
         navigate("dashboard");
 
-        // Hide profile, calendar, and health summary tabs in shared view
+        // In shared view: Show Dashboard, Health Summary, Calendar tabs
+        // Only hide Profile tab for privacy
         const profileTab = document.querySelector('[data-nav="profile"]');
         if (profileTab) profileTab.style.display = 'none';
-        const calendarTab = document.querySelector('[data-nav="calendar"]');
-        if (calendarTab) calendarTab.style.display = 'none';
-        const healthSummaryTab = document.querySelector('[data-nav="health-summary"]');
-        if (healthSummaryTab) healthSummaryTab.style.display = 'none';
 
         loader.style.display = "none";
         return; // Exit early, don't need LIFF login
