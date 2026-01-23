@@ -250,7 +250,7 @@ window.saveDashboardPDF = async function () {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     if (isMobile || isLIFF) {
-      // Try Web Share API first (works best on mobile)
+      // Try Web Share API first (works best on mobile for saving files)
       if (navigator.share && navigator.canShare) {
         const file = new File([pdfBlob], filename, { type: 'application/pdf' });
         const shareData = { files: [file] };
@@ -265,29 +265,34 @@ window.saveDashboardPDF = async function () {
         }
       }
 
-      // Fallback: Open PDF in new tab/window (works in LIFF external browser)
+      // Fallback: Use download link approach (works better on mobile browsers)
       const blobUrl = URL.createObjectURL(pdfBlob);
 
-      // Try to open in external browser if in LIFF
-      if (isLIFF && liff.openWindow) {
-        // For LIFF, we need to use a data URL approach or external browser
-        const reader = new FileReader();
-        reader.onload = function () {
-          const dataUrl = reader.result;
-          // Open in external browser
-          liff.openWindow({
-            url: blobUrl,
-            external: true
-          });
-        };
-        reader.readAsDataURL(pdfBlob);
-      } else {
-        // Regular mobile browser - open in new tab
+      // Create and trigger download link
+      const downloadLink = document.createElement('a');
+      downloadLink.href = blobUrl;
+      downloadLink.download = filename;
+      downloadLink.style.display = 'none';
+      document.body.appendChild(downloadLink);
+
+      // For iOS Safari, we need to use a different approach
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      if (isIOS && isLIFF) {
+        // iOS in LIFF: Open in new tab for download (user can long-press to save)
         window.open(blobUrl, '_blank');
+        // Show instruction to user
+        setTimeout(() => {
+          alert('💡 เปิด PDF แล้ว! กดค้างที่หน้าจอเพื่อบันทึก หรือใช้ปุ่ม Share ของ iOS');
+        }, 500);
+      } else {
+        // Android and other mobile browsers: trigger download
+        downloadLink.click();
       }
 
-      // Cleanup after delay
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+      // Cleanup
+      document.body.removeChild(downloadLink);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
 
     } else {
       // Desktop: Use standard download
