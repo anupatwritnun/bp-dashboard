@@ -69,25 +69,78 @@ window.saveDashboardPDF = async function () {
     const noPrintElements = document.querySelectorAll('.no-print');
     noPrintElements.forEach(el => el.style.visibility = 'hidden');
 
+    // ===== INJECT TEMPORARY STYLE TO OVERRIDE GLASSMORPHISM =====
+    const pdfStyleFix = document.createElement('style');
+    pdfStyleFix.id = 'pdf-style-fix';
+    pdfStyleFix.textContent = `
+      /* Override all glassmorphism and transparency for PDF capture */
+      .pdf-capture-mode * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+      .pdf-capture-mode [class*="backdrop"] {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+      .pdf-capture-mode [class*="blur"] {
+        filter: none !important;
+        backdrop-filter: none !important;
+      }
+      .pdf-capture-mode [class*="bg-white\\/"],
+      .pdf-capture-mode [class*="bg-slate\\/"],
+      .pdf-capture-mode [class*="opacity-"] {
+        opacity: 1 !important;
+      }
+      .pdf-capture-mode .bg-white\\/90,
+      .pdf-capture-mode .bg-white\\/80,
+      .pdf-capture-mode .bg-white\\/70 {
+        background-color: #ffffff !important;
+      }
+      .pdf-capture-mode nav {
+        background-color: #ffffff !important;
+        backdrop-filter: none !important;
+      }
+    `;
+    document.head.appendChild(pdfStyleFix);
+
+    // ===== Add capture mode class to body =====
+    document.body.classList.add('pdf-capture-mode');
+
     // ===== Temporarily remove shadows and blur for clean PDF =====
-    const elementsWithShadow = document.querySelectorAll('[class*="shadow"], [class*="blur"]');
+    const elementsWithEffects = document.querySelectorAll('[class*="shadow"], [class*="blur"], [class*="backdrop"], [class*="opacity"]');
     const originalStyles = [];
-    elementsWithShadow.forEach((el, index) => {
+    elementsWithEffects.forEach((el, index) => {
+      const computed = window.getComputedStyle(el);
       originalStyles[index] = {
         boxShadow: el.style.boxShadow,
-        filter: el.style.filter
+        filter: el.style.filter,
+        backdropFilter: el.style.backdropFilter,
+        webkitBackdropFilter: el.style.webkitBackdropFilter,
+        opacity: el.style.opacity,
+        background: el.style.background,
+        backgroundColor: el.style.backgroundColor
       };
       el.style.boxShadow = 'none';
       el.style.filter = 'none';
+      el.style.backdropFilter = 'none';
+      el.style.webkitBackdropFilter = 'none';
+
+      // If element has semi-transparent background, make it solid
+      if (computed.backgroundColor.includes('rgba')) {
+        el.style.backgroundColor = '#ffffff';
+      }
     });
 
-    // Also handle elements with backdrop-blur
-    const backdropElements = document.querySelectorAll('[class*="backdrop"]');
-    const backdropOriginal = [];
-    backdropElements.forEach((el, index) => {
-      backdropOriginal[index] = el.style.backdropFilter;
-      el.style.backdropFilter = 'none';
+    // Also fix elements with bg-white/90 type classes (Tailwind opacity)
+    const semiTransparentBgs = document.querySelectorAll('[class*="bg-white/"], [class*="bg-slate/"]');
+    const bgOriginal = [];
+    semiTransparentBgs.forEach((el, index) => {
+      bgOriginal[index] = el.style.backgroundColor;
+      el.style.backgroundColor = '#ffffff';
     });
+
+    // Small delay to let styles apply
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // ===== Capture Dashboard (ภาพรวม) =====
     const dashboardPage = document.getElementById('page-dashboard');
@@ -103,6 +156,7 @@ window.saveDashboardPDF = async function () {
         backgroundColor: '#fdfbf7',
         logging: false,
         windowWidth: 800,
+        removeContainer: true,
       });
 
       // Calculate dimensions to fit page
@@ -225,14 +279,25 @@ window.saveDashboardPDF = async function () {
     // Restore no-print elements
     noPrintElements.forEach(el => el.style.visibility = 'visible');
 
-    // ===== Restore shadows and blur effects =====
-    elementsWithShadow.forEach((el, index) => {
+    // ===== Restore all effects =====
+    elementsWithEffects.forEach((el, index) => {
       el.style.boxShadow = originalStyles[index]?.boxShadow || '';
       el.style.filter = originalStyles[index]?.filter || '';
+      el.style.backdropFilter = originalStyles[index]?.backdropFilter || '';
+      el.style.webkitBackdropFilter = originalStyles[index]?.webkitBackdropFilter || '';
+      el.style.opacity = originalStyles[index]?.opacity || '';
+      el.style.backgroundColor = originalStyles[index]?.backgroundColor || '';
     });
-    backdropElements.forEach((el, index) => {
-      el.style.backdropFilter = backdropOriginal[index] || '';
+
+    // Restore semi-transparent backgrounds
+    semiTransparentBgs.forEach((el, index) => {
+      el.style.backgroundColor = bgOriginal[index] || '';
     });
+
+    // ===== Remove PDF capture mode =====
+    document.body.classList.remove('pdf-capture-mode');
+    const pdfStyleFixEl = document.getElementById('pdf-style-fix');
+    if (pdfStyleFixEl) pdfStyleFixEl.remove();
 
     // Create filename with date
     const today = new Date().toLocaleDateString('th-TH', {
@@ -306,13 +371,21 @@ window.saveDashboardPDF = async function () {
     // Restore styles on error
     try {
       document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'visible');
-      document.querySelectorAll('[class*="shadow"], [class*="blur"]').forEach(el => {
+      document.querySelectorAll('[class*="shadow"], [class*="blur"], [class*="backdrop"], [class*="opacity"]').forEach(el => {
         el.style.boxShadow = '';
         el.style.filter = '';
-      });
-      document.querySelectorAll('[class*="backdrop"]').forEach(el => {
         el.style.backdropFilter = '';
+        el.style.webkitBackdropFilter = '';
+        el.style.opacity = '';
+        el.style.backgroundColor = '';
       });
+      document.querySelectorAll('[class*="bg-white/"], [class*="bg-slate/"]').forEach(el => {
+        el.style.backgroundColor = '';
+      });
+      // Remove PDF capture mode
+      document.body.classList.remove('pdf-capture-mode');
+      const pdfStyleFixEl = document.getElementById('pdf-style-fix');
+      if (pdfStyleFixEl) pdfStyleFixEl.remove();
     } catch (e) { }
   } finally {
     // Restore button
