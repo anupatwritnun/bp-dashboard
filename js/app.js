@@ -148,57 +148,93 @@ window.saveDashboardPDF = async function () {
     allElements.forEach(el => {
       const computed = window.getComputedStyle(el);
       const classList = el.className || '';
+      const classStr = typeof classList === 'string' ? classList : (classList.baseVal || '');
 
-      // Check if element has glassmorphism effects
-      const hasBackdrop = computed.backdropFilter !== 'none' ||
-        computed.webkitBackdropFilter !== 'none';
-      const hasOpacity = parseFloat(computed.opacity) < 1;
-      const hasSemiTransparentBg = computed.backgroundColor.includes('rgba') &&
-        !computed.backgroundColor.includes('rgba(0, 0, 0, 0)');
-      const hasBlurClass = typeof classList === 'string' &&
-        (classList.includes('blur') || classList.includes('backdrop'));
-      const hasBgOpacityClass = typeof classList === 'string' &&
-        (classList.includes('bg-white/') || classList.includes('bg-slate/'));
+      // Save original styles for ALL elements (we'll restore later)
+      const originalStyles = {
+        backdropFilter: el.style.backdropFilter,
+        webkitBackdropFilter: el.style.webkitBackdropFilter,
+        opacity: el.style.opacity,
+        backgroundColor: el.style.backgroundColor,
+        filter: el.style.filter,
+        boxShadow: el.style.boxShadow
+      };
 
-      if (hasBackdrop || hasOpacity || hasSemiTransparentBg || hasBlurClass || hasBgOpacityClass) {
-        // Save original styles
-        elementOriginalStyles.set(el, {
-          backdropFilter: el.style.backdropFilter,
-          webkitBackdropFilter: el.style.webkitBackdropFilter,
-          opacity: el.style.opacity,
-          backgroundColor: el.style.backgroundColor,
-          filter: el.style.filter
-        });
+      let needsFix = false;
 
-        // Apply solid styles
+      // Check for backdrop-filter (various browser prefixes)
+      const computedBackdrop = computed.backdropFilter || computed.webkitBackdropFilter || '';
+      if (computedBackdrop && computedBackdrop !== 'none') {
+        el.style.backdropFilter = 'none';
+        el.style.webkitBackdropFilter = 'none';
+        needsFix = true;
+      }
+
+      // Check for filter with blur
+      const computedFilter = computed.filter || '';
+      if (computedFilter && computedFilter !== 'none' && computedFilter.includes('blur')) {
+        el.style.filter = 'none';
+        needsFix = true;
+      }
+
+      // Check for opacity less than 1
+      const computedOpacity = parseFloat(computed.opacity);
+      if (computedOpacity < 1) {
+        el.style.opacity = '1';
+        needsFix = true;
+      }
+
+      // Check for any semi-transparent background (rgba with alpha < 1)
+      const bgColor = computed.backgroundColor;
+      if (bgColor && bgColor.includes('rgba')) {
+        const rgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),?\s*([\d.]+)?\)/);
+        if (rgbaMatch) {
+          const r = parseInt(rgbaMatch[1]);
+          const g = parseInt(rgbaMatch[2]);
+          const b = parseInt(rgbaMatch[3]);
+          const a = rgbaMatch[4] !== undefined ? parseFloat(rgbaMatch[4]) : 1;
+
+          // If it has transparency (alpha < 1)
+          if (a < 1) {
+            // Convert to solid color - blend with white background
+            const blendedR = Math.round(r * a + 255 * (1 - a));
+            const blendedG = Math.round(g * a + 255 * (1 - a));
+            const blendedB = Math.round(b * a + 255 * (1 - a));
+            el.style.backgroundColor = `rgb(${blendedR}, ${blendedG}, ${blendedB})`;
+            needsFix = true;
+          }
+        }
+      }
+
+      // Check for Tailwind opacity classes in class name
+      if (classStr.includes('bg-white/') ||
+        classStr.includes('bg-slate/') ||
+        classStr.includes('/50') ||
+        classStr.includes('/60') ||
+        classStr.includes('/70') ||
+        classStr.includes('/80') ||
+        classStr.includes('/90') ||
+        classStr.includes('/95') ||
+        classStr.includes('backdrop') ||
+        classStr.includes('blur')) {
         el.style.backdropFilter = 'none';
         el.style.webkitBackdropFilter = 'none';
         el.style.filter = 'none';
 
-        if (hasOpacity) {
-          el.style.opacity = '1';
+        // For bg-white/* classes, set solid white
+        if (classStr.includes('bg-white/')) {
+          el.style.backgroundColor = '#ffffff';
         }
+        needsFix = true;
+      }
 
-        if (hasSemiTransparentBg || hasBgOpacityClass) {
-          // Extract RGB from rgba and make it solid
-          const bgMatch = computed.backgroundColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-          if (bgMatch) {
-            const r = parseInt(bgMatch[1]);
-            const g = parseInt(bgMatch[2]);
-            const b = parseInt(bgMatch[3]);
-            // If it's mostly white, make it pure white
-            if (r > 200 && g > 200 && b > 200) {
-              el.style.backgroundColor = '#ffffff';
-            } else {
-              el.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-            }
-          }
-        }
+      if (needsFix) {
+        elementOriginalStyles.set(el, originalStyles);
       }
     });
 
-    // Small delay to let styles apply
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Longer delay to ensure styles are fully applied before capture
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // ===== Capture Dashboard (ภาพรวม) =====
     const dashboardPage = document.getElementById('page-dashboard');
@@ -211,10 +247,48 @@ window.saveDashboardPDF = async function () {
       const dashboardCanvas = await html2canvas(dashboardPage, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#fdfbf7',
+        backgroundColor: '#ffffff',
         logging: false,
         windowWidth: 800,
         removeContainer: true,
+        onclone: (clonedDoc) => {
+          // Fix all elements in the cloned document
+          const allClonedElements = clonedDoc.querySelectorAll('*');
+          allClonedElements.forEach(el => {
+            const style = el.style;
+            const computed = clonedDoc.defaultView.getComputedStyle(el);
+
+            // Remove all blur/backdrop effects
+            style.backdropFilter = 'none';
+            style.webkitBackdropFilter = 'none';
+            if (computed.filter && computed.filter.includes('blur')) {
+              style.filter = 'none';
+            }
+
+            // Fix opacity
+            if (parseFloat(computed.opacity) < 1) {
+              style.opacity = '1';
+            }
+
+            // Fix semi-transparent backgrounds
+            const bgColor = computed.backgroundColor;
+            if (bgColor && bgColor.includes('rgba')) {
+              const match = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),?\s*([\d.]+)?\)/);
+              if (match) {
+                const r = parseInt(match[1]);
+                const g = parseInt(match[2]);
+                const b = parseInt(match[3]);
+                const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+                if (a < 1) {
+                  const blendedR = Math.round(r * a + 255 * (1 - a));
+                  const blendedG = Math.round(g * a + 255 * (1 - a));
+                  const blendedB = Math.round(b * a + 255 * (1 - a));
+                  style.backgroundColor = `rgb(${blendedR}, ${blendedG}, ${blendedB})`;
+                }
+              }
+            }
+          });
+        }
       });
 
       // Calculate dimensions to fit page
@@ -282,9 +356,47 @@ window.saveDashboardPDF = async function () {
       const healthCanvas = await html2canvas(healthSummaryPage, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#fdfbf7',
+        backgroundColor: '#ffffff',
         logging: false,
         windowWidth: 800,
+        onclone: (clonedDoc) => {
+          // Fix all elements in the cloned document
+          const allClonedElements = clonedDoc.querySelectorAll('*');
+          allClonedElements.forEach(el => {
+            const style = el.style;
+            const computed = clonedDoc.defaultView.getComputedStyle(el);
+
+            // Remove all blur/backdrop effects
+            style.backdropFilter = 'none';
+            style.webkitBackdropFilter = 'none';
+            if (computed.filter && computed.filter.includes('blur')) {
+              style.filter = 'none';
+            }
+
+            // Fix opacity
+            if (parseFloat(computed.opacity) < 1) {
+              style.opacity = '1';
+            }
+
+            // Fix semi-transparent backgrounds
+            const bgColor = computed.backgroundColor;
+            if (bgColor && bgColor.includes('rgba')) {
+              const match = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),?\s*([\d.]+)?\)/);
+              if (match) {
+                const r = parseInt(match[1]);
+                const g = parseInt(match[2]);
+                const b = parseInt(match[3]);
+                const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+                if (a < 1) {
+                  const blendedR = Math.round(r * a + 255 * (1 - a));
+                  const blendedG = Math.round(g * a + 255 * (1 - a));
+                  const blendedB = Math.round(b * a + 255 * (1 - a));
+                  style.backgroundColor = `rgb(${blendedR}, ${blendedG}, ${blendedB})`;
+                }
+              }
+            }
+          });
+        }
       });
 
       // Add new page for health summary
@@ -351,6 +463,7 @@ window.saveDashboardPDF = async function () {
       el.style.opacity = originalStyle.opacity || '';
       el.style.backgroundColor = originalStyle.backgroundColor || '';
       el.style.filter = originalStyle.filter || '';
+      el.style.boxShadow = originalStyle.boxShadow || '';
     });
 
     // ===== Remove PDF capture mode =====
