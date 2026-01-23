@@ -242,7 +242,7 @@ function renderHealthSummary() {
 
   container.innerHTML = `
     <!-- Header Section -->
-    <div class="sticky top-0 z-20 bg-white/95 backdrop-blur-sm pt-2 pb-4 border-b border-gray-50">
+    <div class="health-summary-header sticky top-0 z-20 bg-white/95 backdrop-blur-sm pt-2 pb-4 border-b border-gray-50">
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold text-gray-800">สรุปสุขภาพ</h1>
         <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 text-gray-400">

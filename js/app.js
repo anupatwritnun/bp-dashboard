@@ -85,41 +85,55 @@ window.saveDashboardPDF = async function () {
     const pdfStyleFix = document.createElement('style');
     pdfStyleFix.id = 'pdf-style-fix';
     pdfStyleFix.textContent = `
-      /* Override all glassmorphism and transparency for PDF capture */
+      /* Global overrides for PDF capture */
+      .pdf-capture-mode,
       .pdf-capture-mode * {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-      }
-      .pdf-capture-mode [class*="backdrop"] {
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        background-color: #ffffff !important;
-      }
-      .pdf-capture-mode [class*="blur"] {
         filter: none !important;
-        backdrop-filter: none !important;
-      }
-      .pdf-capture-mode [class*="blur-3xl"],
-      .pdf-capture-mode [class*="blur-2xl"] {
-        display: none !important;
-      }
-      .pdf-capture-mode [class*="bg-white\\/"],
-      .pdf-capture-mode [class*="bg-slate\\/"],
-      .pdf-capture-mode [class*="opacity-"] {
-        opacity: 1 !important;
-      }
-      .pdf-capture-mode .bg-white\\/90,
-      .pdf-capture-mode .bg-white\\/80,
-      .pdf-capture-mode .bg-white\\/70 {
-        background-color: #ffffff !important;
       }
       .pdf-capture-mode nav {
         background-color: #ffffff !important;
-        backdrop-filter: none !important;
       }
-      /* Force solid backgrounds on cards */
-      .pdf-capture-mode [class*="rounded-"] {
-        backdrop-filter: none !important;
+      /* Override all semi-transparent white backgrounds */
+      .pdf-capture-mode [class*="bg-white/"],
+      .pdf-capture-mode [class*="bg-slate/"],
+      .pdf-capture-mode .calendar-glass-card,
+      .pdf-capture-mode .calendar-header-glass,
+      .pdf-capture-mode .health-summary-card,
+      .pdf-capture-mode .health-summary-header {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+      }
+      /* Override semi-transparent colored backgrounds */
+      .pdf-capture-mode [class*="/50"],
+      .pdf-capture-mode [class*="/60"],
+      .pdf-capture-mode [class*="/70"],
+      .pdf-capture-mode [class*="/80"],
+      .pdf-capture-mode [class*="/90"],
+      .pdf-capture-mode [class*="/95"] {
+        opacity: 1 !important;
+      }
+      /* Override health summary sticky header */
+      .pdf-capture-mode #page-health-summary .sticky,
+      .pdf-capture-mode #health-summary-container .sticky {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+      }
+      /* Ensure all cards have solid backgrounds */
+      .pdf-capture-mode .rounded-2xl,
+      .pdf-capture-mode .rounded-3xl,
+      .pdf-capture-mode .rounded-xl {
+        background-color: #ffffff !important;
+      }
+      /* Override nav bar for PDF */
+      .pdf-capture-mode nav {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+      }
+      /* Override loader overlay if visible */
+      .pdf-capture-mode .loader-overlay {
+        display: none !important;
       }
     `;
     document.head.appendChild(pdfStyleFix);
@@ -127,41 +141,64 @@ window.saveDashboardPDF = async function () {
     // ===== Add capture mode class to body =====
     document.body.classList.add('pdf-capture-mode');
 
-    // ===== Temporarily remove shadows and blur for clean PDF =====
-    const elementsWithEffects = document.querySelectorAll('[class*="shadow"], [class*="blur"], [class*="backdrop"], [class*="opacity"]');
-    const originalStyles = [];
-    elementsWithEffects.forEach((el, index) => {
-      const computed = window.getComputedStyle(el);
-      originalStyles[index] = {
-        boxShadow: el.style.boxShadow,
-        filter: el.style.filter,
-        backdropFilter: el.style.backdropFilter,
-        webkitBackdropFilter: el.style.webkitBackdropFilter,
-        opacity: el.style.opacity,
-        background: el.style.background,
-        backgroundColor: el.style.backgroundColor
-      };
-      el.style.boxShadow = 'none';
-      el.style.filter = 'none';
-      el.style.backdropFilter = 'none';
-      el.style.webkitBackdropFilter = 'none';
+    // ===== AGGRESSIVE FIX: Loop through ALL elements and fix glassmorphism =====
+    const allElements = document.querySelectorAll('*');
+    const elementOriginalStyles = new Map();
 
-      // If element has semi-transparent background, make it solid
-      if (computed.backgroundColor.includes('rgba')) {
-        el.style.backgroundColor = '#ffffff';
+    allElements.forEach(el => {
+      const computed = window.getComputedStyle(el);
+      const classList = el.className || '';
+
+      // Check if element has glassmorphism effects
+      const hasBackdrop = computed.backdropFilter !== 'none' ||
+        computed.webkitBackdropFilter !== 'none';
+      const hasOpacity = parseFloat(computed.opacity) < 1;
+      const hasSemiTransparentBg = computed.backgroundColor.includes('rgba') &&
+        !computed.backgroundColor.includes('rgba(0, 0, 0, 0)');
+      const hasBlurClass = typeof classList === 'string' &&
+        (classList.includes('blur') || classList.includes('backdrop'));
+      const hasBgOpacityClass = typeof classList === 'string' &&
+        (classList.includes('bg-white/') || classList.includes('bg-slate/'));
+
+      if (hasBackdrop || hasOpacity || hasSemiTransparentBg || hasBlurClass || hasBgOpacityClass) {
+        // Save original styles
+        elementOriginalStyles.set(el, {
+          backdropFilter: el.style.backdropFilter,
+          webkitBackdropFilter: el.style.webkitBackdropFilter,
+          opacity: el.style.opacity,
+          backgroundColor: el.style.backgroundColor,
+          filter: el.style.filter
+        });
+
+        // Apply solid styles
+        el.style.backdropFilter = 'none';
+        el.style.webkitBackdropFilter = 'none';
+        el.style.filter = 'none';
+
+        if (hasOpacity) {
+          el.style.opacity = '1';
+        }
+
+        if (hasSemiTransparentBg || hasBgOpacityClass) {
+          // Extract RGB from rgba and make it solid
+          const bgMatch = computed.backgroundColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (bgMatch) {
+            const r = parseInt(bgMatch[1]);
+            const g = parseInt(bgMatch[2]);
+            const b = parseInt(bgMatch[3]);
+            // If it's mostly white, make it pure white
+            if (r > 200 && g > 200 && b > 200) {
+              el.style.backgroundColor = '#ffffff';
+            } else {
+              el.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+            }
+          }
+        }
       }
     });
 
-    // Also fix elements with bg-white/90 type classes (Tailwind opacity)
-    const semiTransparentBgs = document.querySelectorAll('[class*="bg-white/"], [class*="bg-slate/"]');
-    const bgOriginal = [];
-    semiTransparentBgs.forEach((el, index) => {
-      bgOriginal[index] = el.style.backgroundColor;
-      el.style.backgroundColor = '#ffffff';
-    });
-
     // Small delay to let styles apply
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     // ===== Capture Dashboard (ภาพรวม) =====
     const dashboardPage = document.getElementById('page-dashboard');
@@ -307,19 +344,13 @@ window.saveDashboardPDF = async function () {
       el.style.display = blurOriginal[index] || '';
     });
 
-    // ===== Restore all effects =====
-    elementsWithEffects.forEach((el, index) => {
-      el.style.boxShadow = originalStyles[index]?.boxShadow || '';
-      el.style.filter = originalStyles[index]?.filter || '';
-      el.style.backdropFilter = originalStyles[index]?.backdropFilter || '';
-      el.style.webkitBackdropFilter = originalStyles[index]?.webkitBackdropFilter || '';
-      el.style.opacity = originalStyles[index]?.opacity || '';
-      el.style.backgroundColor = originalStyles[index]?.backgroundColor || '';
-    });
-
-    // Restore semi-transparent backgrounds
-    semiTransparentBgs.forEach((el, index) => {
-      el.style.backgroundColor = bgOriginal[index] || '';
+    // ===== Restore all glassmorphism effects =====
+    elementOriginalStyles.forEach((originalStyle, el) => {
+      el.style.backdropFilter = originalStyle.backdropFilter || '';
+      el.style.webkitBackdropFilter = originalStyle.webkitBackdropFilter || '';
+      el.style.opacity = originalStyle.opacity || '';
+      el.style.backgroundColor = originalStyle.backgroundColor || '';
+      el.style.filter = originalStyle.filter || '';
     });
 
     // ===== Remove PDF capture mode =====
