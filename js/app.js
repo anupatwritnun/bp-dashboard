@@ -65,9 +65,21 @@ window.saveDashboardPDF = async function () {
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
 
-    // Hide no-print elements
+    // Hide no-print elements completely (use display:none for html2canvas)
     const noPrintElements = document.querySelectorAll('.no-print');
-    noPrintElements.forEach(el => el.style.visibility = 'hidden');
+    const noPrintOriginalDisplay = [];
+    noPrintElements.forEach((el, index) => {
+      noPrintOriginalDisplay[index] = el.style.display;
+      el.style.display = 'none';
+    });
+
+    // ===== HIDE DECORATIVE BLUR ELEMENTS COMPLETELY =====
+    const blurDecorations = document.querySelectorAll('[class*="blur-3xl"], [class*="blur-2xl"]');
+    const blurOriginal = [];
+    blurDecorations.forEach((el, index) => {
+      blurOriginal[index] = el.style.display;
+      el.style.display = 'none';
+    });
 
     // ===== INJECT TEMPORARY STYLE TO OVERRIDE GLASSMORPHISM =====
     const pdfStyleFix = document.createElement('style');
@@ -81,10 +93,15 @@ window.saveDashboardPDF = async function () {
       .pdf-capture-mode [class*="backdrop"] {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
+        background-color: #ffffff !important;
       }
       .pdf-capture-mode [class*="blur"] {
         filter: none !important;
         backdrop-filter: none !important;
+      }
+      .pdf-capture-mode [class*="blur-3xl"],
+      .pdf-capture-mode [class*="blur-2xl"] {
+        display: none !important;
       }
       .pdf-capture-mode [class*="bg-white\\/"],
       .pdf-capture-mode [class*="bg-slate\\/"],
@@ -98,6 +115,10 @@ window.saveDashboardPDF = async function () {
       }
       .pdf-capture-mode nav {
         background-color: #ffffff !important;
+        backdrop-filter: none !important;
+      }
+      /* Force solid backgrounds on cards */
+      .pdf-capture-mode [class*="rounded-"] {
         backdrop-filter: none !important;
       }
     `;
@@ -277,7 +298,14 @@ window.saveDashboardPDF = async function () {
     }
 
     // Restore no-print elements
-    noPrintElements.forEach(el => el.style.visibility = 'visible');
+    noPrintElements.forEach((el, index) => {
+      el.style.display = noPrintOriginalDisplay[index] || '';
+    });
+
+    // Restore blur decorations
+    blurDecorations.forEach((el, index) => {
+      el.style.display = blurOriginal[index] || '';
+    });
 
     // ===== Restore all effects =====
     elementsWithEffects.forEach((el, index) => {
@@ -370,7 +398,8 @@ window.saveDashboardPDF = async function () {
 
     // Restore styles on error
     try {
-      document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'visible');
+      document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
+      document.querySelectorAll('[class*="blur-3xl"], [class*="blur-2xl"]').forEach(el => el.style.display = '');
       document.querySelectorAll('[class*="shadow"], [class*="blur"], [class*="backdrop"], [class*="opacity"]').forEach(el => {
         el.style.boxShadow = '';
         el.style.filter = '';
