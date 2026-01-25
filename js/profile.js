@@ -404,6 +404,50 @@ function renderProfile() {
                     <h4 class="text-3xl font-black text-slate-800">${totalLogs} <span class="text-sm text-slate-500 font-medium">วัน</span></h4>
                 </div>
             </div>
+
+            <!-- Ranking / Percentile Card -->
+            ${(stats.rank || stats.top_percent) ? (() => {
+            let rankTitle = "อันดับของคุณ";
+            let rankValue = "-";
+            let rankDesc = "พยายามต่อไป!";
+            let bgClass = "bg-purple-50 border-purple-100";
+            let iconClass = "text-purple-600";
+            let iconBg = "bg-white";
+
+            // Logic: Rank 1-10 vs Percentile
+            if (stats.rank && stats.rank <= 10) {
+                rankValue = `<span class="text-2xl">#</span>${stats.rank}`;
+                rankDesc = "สุดยอด! คุณติด Top 10";
+                bgClass = "bg-gradient-to-br from-purple-50 to-fuchsia-50 border-purple-100";
+                iconClass = "text-fuchsia-600";
+            } else if (stats.top_percent) {
+                // "30% meaning better than 70%"
+                const betterThan = Math.round(100 - parseFloat(stats.top_percent));
+                rankTitle = "คะแนนนำ";
+                rankValue = `${betterThan}<span class="text-lg">%</span>`;
+                rankDesc = `เหนือกว่าคนอีก ${betterThan}%`;
+            }
+
+            return `
+                <div class="col-span-2 ${bgClass} border rounded-3xl p-5 flex items-center justify-between group hover:-translate-y-1 transition-transform relative overflow-hidden">
+                    <div class="relative z-10 flex flex-col justify-between h-full">
+                         <div class="${iconBg} p-2.5 w-fit rounded-xl shadow-sm ${iconClass} mb-2">
+                            <i data-lucide="trophy" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="${iconClass} text-xs font-bold uppercase tracking-wider mb-1 opacity-80">${rankTitle}</p>
+                            <h4 class="text-3xl font-black text-slate-800">${rankValue}</h4>
+                            <p class="text-xs text-slate-500 font-medium mt-1">${rankDesc}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Decorative BG Icon -->
+                    <div class="absolute -right-6 -bottom-6 text-9xl opacity-10 rotate-12 pointer-events-none">
+                        🏆
+                    </div>
+                </div>
+                `;
+        })() : ''}
         </div>
 
     </div>
@@ -418,7 +462,7 @@ function renderProfile() {
                 <h3 class="font-bold text-slate-800">แชร์ความสำเร็จ</h3>
             </div>
 
-            <!-- Share Preivew Area -->
+            <!-- Share Preview Area -->
             <div class="p-6 bg-slate-50 flex justify-center">
                 
                 <!-- NEW DESIGN CARD -->
